@@ -20,6 +20,9 @@ dependencies = [
   "structlog>=24",
   "requests>=2.31",
   "lxml>=5",
+  "scipy>=1.11",
+  "scikit-learn>=1.4",
+  "cvxpy>=1.4",
 ]
 
 [project.optional-dependencies]
@@ -54,8 +57,9 @@ strict = true
 files = ["src/sentinel"]
 
 [[tool.mypy.overrides]]
-module = ["yfinance.*"]
+module = ["yfinance.*", "cvxpy.*", "scipy.*", "sklearn.*"]
 ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

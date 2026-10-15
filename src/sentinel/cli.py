@@ -274,3 +274,55 @@ def backtest_run(
         evaluations=registry.n_evaluations,
         reruns=registry.n_reruns,
     )
+
+
+portfolio_app = typer.Typer(help="Portfolio construction commands", no_args_is_help=True)
+app.add_typer(portfolio_app, name="portfolio")
+
+
+@portfolio_app.command("run")
+def portfolio_run(
+    fixture: Path = Path("data/fixtures"),
+    out: Path = Path("results"),
+    config: Path = Path("configs/ci_fixture.yaml"),
+) -> None:
+    """Compare mean-variance, risk parity and HRP against the equal weight baseline.
+
+    Settings come from the pre-registered portfolio config. The holdout is never read.
+    Every portfolio variant is registered as a trial.
+    """
+    from sentinel.backtest.holdout import HoldoutGuard
+    from sentinel.backtest.trials import TrialRegistry
+    from sentinel.config import load_run_config
+    from sentinel.portfolio.compare import run_portfolios
+    from sentinel.signals.base import panel_from_prices
+
+    configure_logging()
+    log = get_logger("portfolio")
+    run = load_run_config(config)
+    prices = pd.read_parquet(fixture / "prices.parquet")
+    meta = json.loads((fixture / "meta.json").read_text())
+    synthetic = bool(meta.get("synthetic", True))
+    d = run.data
+    guard = HoldoutGuard.for_run(
+        pd.Timestamp(d.holdout_start),
+        pd.Timestamp(d.holdout_end) if d.holdout_end else None,
+        synthetic,
+        results_root=out,
+    )
+    prices = guard.dev_only(prices)
+    changes = guard.dev_only(pd.read_parquet(fixture / "changes.parquet"))
+    cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
+    registry = TrialRegistry(
+        (out / "synthetic" / "trial_log.csv") if synthetic else Path("validation/trial_log.csv")
+    )
+    tables = run_portfolios(
+        panel_from_prices(prices, cal),
+        membership_from_meta(meta, changes, cal),
+        run,
+        guard=guard,
+        registry=registry,
+    )
+    for name, table in tables.items():
+        write_result(out, name, table, synthetic)
+    log.info("portfolio_written", synthetic=synthetic, trials=registry.n_trials)

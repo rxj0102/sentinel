@@ -14,3 +14,9 @@ Data layer, Phase 1.
 10. The deflated Sharpe counts distinct registered trials and treats them as independent. Correlated trials make the true effective count lower, so the deflation is conservative. Cost sensitivity cells are logged but not counted, a judgment stated in the output.
 11. Engine simplifications: turnover ignores weight drift between rebalances, missing returns are treated as zero (which understates delisting losses), the participation cap is a diagnostic and not a constraint, and there is no cash return or long book financing.
 12. The holdout guard protects against accidental use inside this codebase. It cannot stop someone from reading the holdout dates directly from files outside the engine, so the access log and the pre-registration are the audit trail.
+13. The information coefficient used to scale alpha in mean-variance is an assumption, not an estimate. Mean-variance amplifies errors in expected returns, so its apparent edge depends on that assumption.
+14. Risk parity and hierarchical risk parity are long only methods. They are applied within the long and short legs chosen by the composite score and then constrained, which is not the same as a true long-short risk parity. The comparison isolates the weighting rule, not these methods in their textbook form.
+15. If portfolio constraints are infeasible at a rebalance, the previous weights are held and the event is flagged and counted. Constraints are never silently relaxed.
+16. The per name position cap needs roughly thirty or more names per leg to allow full gross exposure. In a small universe the cap binds and gross falls.
+17. The Ledoit-Wolf target is a scaled identity, which ignores factor structure in returns.
+18. The composite includes the overhang signal at full weight although it is marked lower confidence. This is pre-registered and stated, not hidden.
