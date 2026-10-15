@@ -119,3 +119,35 @@ def rebuild_cmd(
     configure_logging()
     logging.getLogger().addHandler(logging.FileHandler(log_file))
     rebuild(start, end, limit=limit, dry_run=dry_run)
+
+
+signals_app = typer.Typer(help="Signal research commands", no_args_is_help=True)
+app.add_typer(signals_app, name="signals")
+
+
+@signals_app.command("research")
+def signals_research(fixture: Path = Path("data/fixtures"), out: Path = Path("results")) -> None:
+    """IC, decay, turnover, capacity and orthogonalization for every signal."""
+    from sentinel.signals.base import panel_from_prices
+    from sentinel.signals.run import research
+
+    configure_logging()
+    log = get_logger("signals")
+    prices = pd.read_parquet(fixture / "prices.parquet")
+    meta = json.loads((fixture / "meta.json").read_text())
+    synthetic = bool(meta.get("synthetic", True))
+    cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
+    for name, table in research(panel_from_prices(prices, cal)).items():
+        write_result(out, name, table, synthetic)
+    log.info("signals_written", out=str(out), synthetic=synthetic)
+
+
+@signals_app.command("model-cards")
+def signals_model_cards(out: Path = Path("docs/model_cards")) -> None:
+    """Write one MODEL_CARD per registered signal. Results sections stay gated."""
+    from sentinel.signals.library import REGISTRY
+    from sentinel.signals.run import render_model_card
+
+    out.mkdir(parents=True, exist_ok=True)
+    for name, (_, spec) in REGISTRY.items():
+        (out / f"{name}.md").write_text(render_model_card(spec))
