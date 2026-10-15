@@ -45,6 +45,18 @@ def render_report(rep: dict[str, object], synthetic: bool) -> str:
     parts += ["## Survivorship sensitivity (annualised equal weight return)", ""]
     parts += [_table(sens), ""]
     bad = rec[~rec["ok"]]
+    flags = rep["ticker_reuse_flags"]
+    assert isinstance(flags, pd.DataFrame)
+    hit = flags[flags["late_first_price"] | flags["multiple_spells"]]
+    parts += ["## Ticker reuse and history alignment flags", ""]
+    parts += [
+        f"Members checked: {len(flags)}. Late first price or no price: "
+        f"{int(flags['late_first_price'].sum())}. Left and returned: "
+        f"{int(flags['multiple_spells'].sum())}.",
+        "",
+    ]
+    if len(hit):
+        parts += [_table(hit.head(50)), ""]
     parts += ["## Monthly member count reconciliation", ""]
     parts += [f"Months checked: {len(rec)}. Months outside tolerance: {len(bad)}.", ""]
     if len(bad):

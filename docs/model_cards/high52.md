@@ -4,7 +4,8 @@
 
 Investors anchor on the 52 week high and underreact to good news for stocks near it, so proximity to the high predicts higher returns.
 
-Expected sign of the relation to next period returns: positive.
+Expected sign of the relation to next period returns at the 21 day primary horizon: positive.
+Signs for every horizon are locked in docs/hypotheses.md.
 Pre-registered before any real data was touched.
 
 ## Construction
@@ -18,6 +19,10 @@ Positions open at the close of t plus one day.
 ## Reference
 
 George and Hwang (2004)
+
+## Confidence
+
+Normal.
 
 ## Known caveats
 

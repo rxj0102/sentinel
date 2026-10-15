@@ -189,6 +189,7 @@ def quality_report(
     return {
         "integrity": integrity_checks(prices, max_stale_days, extreme_return),
         "coverage_by_year": cov,
+        "ticker_reuse_flags": ticker_reuse_flags(membership, close),
         "member_count_reconciliation": reconcile_member_counts(
             monthly_member_counts(membership), expected_size, size_tolerance
         ),
@@ -216,3 +217,50 @@ def reconcile_member_counts(
     out["deviation"] = out["members"] - expected
     out["ok"] = out["deviation"].abs() <= tolerance
     return out
+
+
+def ticker_reuse_flags(
+    membership: pd.DataFrame, close: pd.DataFrame, tolerance_days: int = 10
+) -> pd.DataFrame:
+    """Flag tickers whose price history does not line up with their index membership.
+
+    Ticker reuse is a survivorship risk: Yahoo serves the history of the current holder of a
+    symbol, so a symbol that once belonged to a different, now vanished company can show
+    prices that are not the member's. Two symptoms are flagged:
+
+    - late_first_price: the first price date is more than tolerance_days after the date the
+      ticker first became an index member (or no price exists at all).
+    - multiple_spells: the ticker left the index and later returned, a reuse candidate.
+
+    The add date of a ticker that is a member on the first calendar day is that first day.
+    """
+    rows = []
+    for t in membership.columns:
+        m = membership[t]
+        if not bool(m.any()):
+            continue
+        add_date = m.index[int(np.argmax(m.to_numpy()))]
+        spells = int((m & ~m.shift(1, fill_value=False)).sum())
+        first_price = close[t].first_valid_index() if t in close.columns else None
+        late = first_price is None or (first_price - add_date).days > tolerance_days
+        rows.append(
+            {
+                "ticker": t,
+                "add_date": add_date,
+                "first_price_date": first_price if first_price is not None else pd.NaT,
+                "days_late": float((first_price - add_date).days) if first_price else np.nan,
+                "spells": spells,
+                "late_first_price": bool(late),
+                "multiple_spells": spells > 1,
+            }
+        )
+    cols = [
+        "ticker",
+        "add_date",
+        "first_price_date",
+        "days_late",
+        "spells",
+        "late_first_price",
+        "multiple_spells",
+    ]
+    return pd.DataFrame(rows, columns=cols)

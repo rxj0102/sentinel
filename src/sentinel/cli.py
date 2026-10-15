@@ -80,7 +80,12 @@ def quality_cmd(fixture: Path = Path("data/fixtures"), out: Path = Path("results
         size_tolerance=int(meta.get("size_tolerance", 10)),
     )
     base = Path("data_quality")
-    for key in ("coverage_by_year", "survivorship_sensitivity", "member_count_reconciliation"):
+    for key in (
+        "coverage_by_year",
+        "survivorship_sensitivity",
+        "member_count_reconciliation",
+        "ticker_reuse_flags",
+    ):
         frame = rep[key]
         assert isinstance(frame, pd.DataFrame)
         write_result(out, f"{base}_{key}", frame, synthetic)

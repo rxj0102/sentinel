@@ -4,7 +4,8 @@
 
 Investors overpay for lottery payoffs, so stocks with extreme recent up days are overpriced and earn lower future returns. Limits to arbitrage via short constraints.
 
-Expected sign of the relation to next period returns: negative.
+Expected sign of the relation to next period returns at the 21 day primary horizon: negative.
+Signs for every horizon are locked in docs/hypotheses.md.
 Pre-registered before any real data was touched.
 
 ## Construction
@@ -18,6 +19,10 @@ Positions open at the close of t plus one day.
 ## Reference
 
 Bali, Cakici, Whitelaw (2011)
+
+## Confidence
+
+Normal.
 
 ## Known caveats
 

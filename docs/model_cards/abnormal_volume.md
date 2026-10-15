@@ -2,9 +2,10 @@
 
 ## Economic hypothesis
 
-Attention driven retail buying pushes prices up at short horizons, then reverses. The sign shown is the short horizon expectation; long horizons may flip.
+Attention driven retail buying pushes prices up over the next few weeks, then reverses at longer horizons. Signs are locked per horizon in docs/hypotheses.md.
 
-Expected sign of the relation to next period returns: positive.
+Expected sign of the relation to next period returns at the 21 day primary horizon: positive.
+Signs for every horizon are locked in docs/hypotheses.md.
 Pre-registered before any real data was touched.
 
 ## Construction
@@ -18,6 +19,10 @@ Positions open at the close of t plus one day.
 ## Reference
 
 Barber and Odean (2008)
+
+## Confidence
+
+Normal.
 
 ## Known caveats
 

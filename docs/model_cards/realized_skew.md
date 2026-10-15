@@ -4,7 +4,8 @@
 
 Lottery preference through skewness: positively skewed stocks are overpriced.
 
-Expected sign of the relation to next period returns: negative.
+Expected sign of the relation to next period returns at the 21 day primary horizon: negative.
+Signs for every horizon are locked in docs/hypotheses.md.
 Pre-registered before any real data was touched.
 
 ## Construction
@@ -18,6 +19,10 @@ Positions open at the close of t plus one day.
 ## Reference
 
 Amaya, Christoffersen, Jacobs, Vasquez (2015)
+
+## Confidence
+
+Normal.
 
 ## Known caveats
 

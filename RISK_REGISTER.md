@@ -12,3 +12,4 @@ Living file. Phase 1 entries only so far. Likelihood and impact are the builder 
 | R6 | Wikipedia change log gaps distort membership | Medium | Medium | Reconcile member count to the expected index size each month and report gaps | Planned, needs real data |
 | R7 | Synthetic engineering results leak into docs as findings | Medium | High | REAL-DATA GATE (issue 1), sidecar labels, CI docs-check | Mitigated in code |
 | R8 | Rebuild scripts fail on live endpoints because they are untested there | High | Medium | Offline parser tests, doctor command, sponsor returns logs, fixes land in parsers | Open |
+| R9 | Ticker reuse misattributes prices to index members (survivorship risk) | Medium | High | Data quality report flags tickers whose first price date is late against the index add date, tickers with no prices, and tickers that left and returned. Flags are reviewed before the REAL-DATA GATE closes. | Open, measured on real data only |

@@ -125,6 +125,12 @@ REGISTRY: dict[str, tuple[SignalFn, SignalSpec]] = {
             "Grinblatt and Han (2005)",
             253,
             caveats=("Turnover weights are approximated without shares outstanding.",),
+            confidence="lower",
+            confidence_note=(
+                "Free data has no shares outstanding history, so the turnover weight in the "
+                "reference price is a volume ratio proxy. The proxy can misstate the reference "
+                "price, so any result for this signal carries lower confidence than the others."
+            ),
         ),
     ),
     "realized_skew": (
@@ -144,12 +150,13 @@ REGISTRY: dict[str, tuple[SignalFn, SignalSpec]] = {
         SignalSpec(
             "abnormal_volume",
             1,
-            "Attention driven retail buying pushes prices up at short horizons, then reverses. "
-            "The sign shown is the short horizon expectation; long horizons may flip.",
+            "Attention driven retail buying pushes prices up over the next few weeks, then "
+            "reverses at longer horizons. Signs are locked per horizon in docs/hypotheses.md.",
             "Log of the 5 day over 252 day average volume.",
             "Barber and Odean (2008)",
             253,
             caveats=("Google Trends version is best effort and not in the core pipeline.",),
+            signs_by_horizon={1: 1, 5: 1, 10: 1, 21: 1, 63: -1},
         ),
     ),
 }

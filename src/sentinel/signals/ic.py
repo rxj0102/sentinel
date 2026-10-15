@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 import numpy as np
 import pandas as pd
 
@@ -54,7 +56,7 @@ def ic_summary(ic: pd.Series, horizon: int, expected_sign: int) -> dict[str, flo
 def decay_table(
     signal: pd.DataFrame,
     close: pd.DataFrame,
-    expected_sign: int,
+    expected_sign: int | Mapping[int, int],
     horizons: tuple[int, ...] = (1, 5, 10, 21, 63),
     delay: int = 1,
 ) -> pd.DataFrame:
@@ -63,5 +65,6 @@ def decay_table(
     rows = []
     for h in horizons:
         ic = rank_ic(signal, forward_returns(close, h, delay))
-        rows.append({"horizon": h, **ic_summary(ic, h, expected_sign)})
+        sign = expected_sign if isinstance(expected_sign, int) else expected_sign[h]
+        rows.append({"horizon": h, **ic_summary(ic, h, sign)})
     return pd.DataFrame(rows)

@@ -94,3 +94,30 @@ def test_synthetic_is_deterministic() -> None:
     a, b = make_market(seed=3), make_market(seed=3)
     assert a.prices.equals(b.prices) and a.changes.equals(b.changes)
     assert not a.prices.equals(make_market(seed=4).prices)
+
+
+def test_ticker_reuse_flags_known_answer() -> None:
+    cal = pd.bdate_range("2020-01-01", periods=60)
+    mem = pd.DataFrame(False, index=cal, columns=["OK", "LATE", "NOPX", "BACK", "NEVER"])
+    mem["OK"] = True
+    mem["LATE"] = True
+    mem["NOPX"] = True
+    mem.loc[cal[0] : cal[9], "BACK"] = True
+    mem.loc[cal[30] :, "BACK"] = True
+    close = pd.DataFrame(1.0, index=cal, columns=["OK", "LATE", "BACK"])
+    close.loc[: cal[24], "LATE"] = np.nan  # first price 35 calendar days after the add date
+    flags = quality.ticker_reuse_flags(mem, close, tolerance_days=10).set_index("ticker")
+    assert "NEVER" not in flags.index
+    assert not flags.loc["OK", "late_first_price"] and not flags.loc["OK", "multiple_spells"]
+    assert flags.loc["LATE", "late_first_price"] and flags.loc["LATE", "days_late"] > 10
+    assert flags.loc["NOPX", "late_first_price"] and pd.isna(flags.loc["NOPX", "first_price_date"])
+    assert flags.loc["BACK", "multiple_spells"] and flags.loc["BACK", "spells"] == 2
+
+
+def test_report_contains_reuse_section_on_synthetic() -> None:
+    from sentinel.data.report import render_report
+
+    m = make_market()
+    mem = membership_matrix(m.initial_members, m.initial_date, m.changes, m.calendar)
+    text = render_report(quality.quality_report(m.prices, mem, expected_size=30), True)
+    assert "Ticker reuse and history alignment flags" in text

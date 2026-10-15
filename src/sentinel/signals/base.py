@@ -65,10 +65,17 @@ class SignalSpec:
     """Metadata that drives model cards and pre-registered tests."""
 
     name: str
-    expected_sign: int  # sign of the relation between signal value and next period return
+    expected_sign: int  # sign at the primary horizon (21 days), see sign_at
     hypothesis: str
     construction: str
     reference: str
     min_history: int
     data: str = "prices and volume (yfinance)"
     caveats: tuple[str, ...] = field(default_factory=tuple)
+    # Horizon specific signs, locked in docs/hypotheses.md. Horizons not listed use expected_sign.
+    signs_by_horizon: dict[int, int] = field(default_factory=dict)
+    confidence: str = "normal"  # normal or lower
+    confidence_note: str = ""
+
+    def sign_at(self, horizon: int) -> int:
+        return self.signs_by_horizon.get(horizon, self.expected_sign)

@@ -29,7 +29,7 @@ def research(panel: Panel, horizons: tuple[int, ...] = HORIZONS) -> dict[str, pd
     fwd21 = forward_returns(panel.close, 21)
     for name, (fn, spec) in REGISTRY.items():
         sig = fn(panel)
-        dec = icmod.decay_table(sig, panel.close, spec.expected_sign, horizons)
+        dec = icmod.decay_table(sig, panel.close, {h: spec.sign_at(h) for h in horizons}, horizons)
         dec.insert(0, "signal", name)
         decay_rows.append(dec)
         w = ps.quantile_weights(sig, 0.2, sign=spec.expected_sign)
@@ -59,6 +59,9 @@ def research(panel: Panel, horizons: tuple[int, ...] = HORIZONS) -> dict[str, pd
 
 def render_model_card(spec: SignalSpec) -> str:
     sign = "positive" if spec.expected_sign > 0 else "negative"
+    confidence = (
+        f"LOWER CONFIDENCE. {spec.confidence_note}" if spec.confidence == "lower" else "Normal."
+    )
     caveats = "\n".join(f"- {c}" for c in spec.caveats) or "- None recorded yet"
     return f"""# Model card: {spec.name}
 
@@ -66,7 +69,8 @@ def render_model_card(spec: SignalSpec) -> str:
 
 {spec.hypothesis}
 
-Expected sign of the relation to next period returns: {sign}.
+Expected sign of the relation to next period returns at the 21 day primary horizon: {sign}.
+Signs for every horizon are locked in docs/hypotheses.md.
 Pre-registered before any real data was touched.
 
 ## Construction
@@ -80,6 +84,10 @@ Positions open at the close of t plus one day.
 ## Reference
 
 {spec.reference}
+
+## Confidence
+
+{confidence}
 
 ## Known caveats
 
