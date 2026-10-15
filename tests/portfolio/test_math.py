@@ -5,9 +5,9 @@ from hypothesis import strategies as st
 
 from sentinel.portfolio.constraints import ConstraintSet, project
 from sentinel.portfolio.covariance import ledoit_wolf, risk_contributions
-from sentinel.portfolio.hrp import hrp_weights, quasi_diagonal_order
+from sentinel.portfolio.erc import erc_weights
+from sentinel.portfolio.hierarchical import hierarchical_weights, quasi_diagonal_order
 from sentinel.portfolio.mean_variance import mean_variance, unconstrained_solution
-from sentinel.portfolio.risk_parity import erc_weights
 
 
 def _psd(n: int, seed: int) -> np.ndarray:
@@ -81,29 +81,29 @@ def test_erc_equalizes_risk_contributions(n: int, seed: int) -> None:
     assert rc.max() - rc.min() < 1e-6
 
 
-def test_hrp_hand_computed_example() -> None:
+def test_hierarchical_hand_computed_example() -> None:
     # A and B are highly correlated and form the first cluster, C is on its own.
     sd = np.ones(3)
     corr = np.array([[1, 0.9, 0.1], [0.9, 1, 0.1], [0.1, 0.1, 1.0]])
     cov = corr * np.outer(sd, sd)
     v_ab = 0.25 + 0.25 + 2 * 0.25 * 0.9  # variance of the inverse variance mix of A and B
     alpha = 1 - v_ab / (v_ab + 1.0)  # weight of the AB cluster
-    w = hrp_weights(cov)
+    w = hierarchical_weights(cov)
     assert w[0] == pytest.approx(alpha / 2) and w[1] == pytest.approx(alpha / 2)
     assert w[2] == pytest.approx(1 - alpha)
     assert w.sum() == pytest.approx(1.0)
 
 
-def test_hrp_properties() -> None:
+def test_hierarchical_properties() -> None:
     cov = _psd(9, 4)
-    w = hrp_weights(cov)
+    w = hierarchical_weights(cov)
     assert (w > 0).all() and w.sum() == pytest.approx(1.0)
     assert sorted(quasi_diagonal_order(cov)) == list(range(9))
     perm = np.random.default_rng(5).permutation(9)
-    assert hrp_weights(cov[np.ix_(perm, perm)]) == pytest.approx(w[perm], rel=1e-9)
-    assert hrp_weights(np.array([[3.0]])) == pytest.approx([1.0])
+    assert hierarchical_weights(cov[np.ix_(perm, perm)]) == pytest.approx(w[perm], rel=1e-9)
+    assert hierarchical_weights(np.array([[3.0]])) == pytest.approx([1.0])
     iid = 0.04 * np.eye(6)
-    assert hrp_weights(iid) == pytest.approx(np.full(6, 1 / 6))
+    assert hierarchical_weights(iid) == pytest.approx(np.full(6, 1 / 6))
 
 
 CONS = ConstraintSet(max_gross=2.0, max_position=0.1, exposure_tol=0.2, turnover_cap_one_way=0.5)

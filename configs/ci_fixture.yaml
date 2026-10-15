@@ -35,3 +35,7 @@ portfolio:
   turnover_cap_one_way: 0.5
   winsorize_lower: 0.01
   winsorize_upper: 0.99
+  ic_source: assumed
+  ic_horizon: 21
+  ic_min_dates: 24
+  require_full_gross_feasibility: false   # synthetic mechanism test only

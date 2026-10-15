@@ -100,9 +100,17 @@ class PortfolioConfig(BaseModel):
     turnover_cap_one_way: float = 0.5
     winsorize_lower: float = 0.01
     winsorize_upper: float = 0.99
+    # IC replacement procedure, docs/hypotheses.md Amendment 2. Default keeps the assumption.
+    ic_source: Literal["assumed", "expanding_estimate"] = "assumed"
+    ic_horizon: int = 21
+    ic_min_dates: int = 24
+    # Real runs always enforce the feasibility check. This switch only affects synthetic runs.
+    require_full_gross_feasibility: bool = True
 
     @model_validator(mode="after")
     def _check(self) -> PortfolioConfig:
+        if self.ic_horizon < 1 or self.ic_min_dates < 2:
+            raise ValueError("ic_horizon must be at least 1 and ic_min_dates at least 2")
         if not 0 < self.leg_quantile < 0.5:
             raise ValueError("leg_quantile must be in (0, 0.5)")
         if self.cov_min_obs > self.cov_window or self.cov_window < 20:

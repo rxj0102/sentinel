@@ -1,4 +1,4 @@
-"""Hierarchical risk parity (Lopez de Prado 2016)."""
+"""Hierarchical allocation of Lopez de Prado (2016), used leg-wise as leg-wise HRP."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _cluster_variance(cov: np.ndarray, idx: list[int]) -> float:
     return float(ivp @ sub @ ivp)
 
 
-def hrp_weights(cov: np.ndarray) -> np.ndarray:
+def hierarchical_weights(cov: np.ndarray) -> np.ndarray:
     """Long only weights summing to one by recursive bisection on cluster variance."""
     n = cov.shape[0]
     order = quasi_diagonal_order(cov)

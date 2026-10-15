@@ -47,7 +47,13 @@ def get(url: str, retries: int = 3, pause: float = 0.3) -> requests.Response:
             return resp
         except requests.RequestException as exc:
             last = exc
-            log.warning("fetch_retry", url=url, attempt=attempt + 1, error=str(exc))
+            log.warning(
+                "fetch_retry",
+                url=url,
+                attempt=attempt + 1,
+                error=str(exc),
+                error_type=type(exc).__name__,
+            )
             time.sleep(2**attempt)
     raise RuntimeError(f"giving up on {url}") from last
 

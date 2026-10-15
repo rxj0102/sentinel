@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from sentinel.data.pit import with_lag
-from sentinel.data.schemas import MembershipChangeSchema, PriceSchema, SeriesSchema
+from sentinel.data.schemas import MembershipChangeSchema, SeriesSchema
 
 
 def parse_sp500_changes(html: str) -> pd.DataFrame:
@@ -109,8 +109,10 @@ def parse_fred_observations(
 
 
 def normalize_yfinance(raw: pd.DataFrame, lag_days: int = 1) -> pd.DataFrame:
-    """Convert yfinance download output (auto_adjust=False, column MultiIndex of
-    field and ticker) into PriceSchema long format. Rows without a close are dropped."""
+    """Convert yfinance download output (auto_adjust=False, column MultiIndex of field and
+    ticker) into long format with the PriceSchema columns and dtypes. Rows without a close are
+    dropped. Strict validation is deferred to after quarantine in the rebuild, so a few bad
+    real rows are set aside and counted instead of aborting the whole download."""
     stacked = raw.stack(level=1, future_stack=True).reset_index()
     stacked.columns = [str(c).lower().replace(" ", "_") for c in stacked.columns]
     stacked = stacked.rename(columns={"level_1": "ticker", "price": "ticker"})
@@ -118,7 +120,11 @@ def normalize_yfinance(raw: pd.DataFrame, lag_days: int = 1) -> pd.DataFrame:
         stacked = stacked.rename(columns={stacked.columns[1]: "ticker"})
     keep = ["date", "ticker", "open", "high", "low", "close", "adj_close", "volume"]
     out = stacked[keep].dropna(subset=["close", "adj_close"]).copy()
+    num = ["open", "high", "low", "close", "adj_close", "volume"]
+    out[num] = out[num].astype(float)  # yfinance may return integer volume
     out["volume"] = out["volume"].fillna(0.0)
-    out["date"] = pd.to_datetime(out["date"]).dt.tz_localize(None)
+    out["date"] = pd.to_datetime(out["date"]).dt.tz_localize(None).astype("datetime64[ns]")
     out = with_lag(out, "date", lag_days).sort_values(["ticker", "date"]).reset_index(drop=True)
-    return PriceSchema.validate(out)
+    out["available_date"] = out["available_date"].astype("datetime64[ns]")
+    # Quarantine runs before strict validation in the rebuild, so bad real rows do not abort it.
+    return out

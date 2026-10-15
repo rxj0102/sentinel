@@ -15,12 +15,14 @@ import pandas as pd
 from sentinel.config import RunConfig
 from sentinel.portfolio.constraints import ConstraintSet, project
 from sentinel.portfolio.covariance import ledoit_wolf, risk_contributions
-from sentinel.portfolio.hrp import hrp_weights
+from sentinel.portfolio.erc import erc_weights
+from sentinel.portfolio.hierarchical import hierarchical_weights
+from sentinel.portfolio.ic_estimate import estimate_at, per_date_ic, resolve_ic
 from sentinel.portfolio.mean_variance import mean_variance
-from sentinel.portfolio.risk_parity import erc_weights
 from sentinel.signals.base import Panel
 
-METHODS = ("mv_lw", "risk_parity", "hrp")
+METHODS = ("mv_lw", "leg_risk_parity", "leg_hrp")
+SKIPPED = ("universe_too_small", "exposures_unavailable", "leg_too_small")
 MONTH = 21
 
 
@@ -28,6 +30,24 @@ MONTH = 21
 class BuildResult:
     weights: pd.DataFrame  # zeros except on rebalance rows
     diagnostics: pd.DataFrame
+
+
+def leg_size(n_names: int, quantile: float) -> int:
+    """Names per leg. The small epsilon avoids float error such as 0.2 times 170."""
+    return int(quantile * n_names + 1e-9)
+
+
+def eligible_indices(
+    panel: Panel, score: pd.DataFrame, member: pd.DataFrame, i: int, window: int
+) -> np.ndarray:
+    """Positions of names usable at row i: member, scored, priced, full return window."""
+    win = panel.ret.iloc[i - window + 1 : i + 1]
+    ok = score.iloc[i].notna() & member.iloc[i] & win.notna().all() & panel.close.iloc[i].notna()
+    return np.flatnonzero(ok.to_numpy())
+
+
+def rebalance_rows(n_rows: int, every: int, cov_window: int) -> list[int]:
+    return [i for i in range(n_rows) if i % every == 0 and i >= max(cov_window, 253)]
 
 
 def _z(x: np.ndarray) -> np.ndarray:
@@ -75,17 +95,13 @@ def build_weights(
     weights = np.zeros((n, len(cols)))
     prev = np.zeros(len(cols))
     rows: list[dict[str, object]] = []
-    for i in range(n):
-        if i % every != 0 or i < max(pc.cov_window, 253):
-            continue
-        window = ret.iloc[i - pc.cov_window + 1 : i + 1]
-        ok = (
-            score.iloc[i].notna()
-            & member.iloc[i]
-            & window.notna().all()
-            & panel.close.iloc[i].notna()
-        ).to_numpy()
-        idx = np.flatnonzero(ok)
+    ic_by_pos = (
+        per_date_ic(score, panel.close, pc.ic_horizon, run.backtest.delay)
+        if pc.ic_source == "expanding_estimate"
+        else None
+    )
+    for i in rebalance_rows(n, every, pc.cov_window):
+        idx = eligible_indices(panel, score, member, i, pc.cov_window)
         names = [cols[j] for j in idx]
         row: dict[str, object] = {
             "date": panel.close.index[i],
@@ -93,24 +109,44 @@ def build_weights(
             "n_universe": len(idx),
             "feasible": False,
             "status": "universe_too_small",
+            "ic_used": np.nan,
+            "ic_source_used": "n/a",
+            "ic_estimate": np.nan,
+            "ic_std_error": np.nan,
+            "ic_n_dates": 0,
         }
         if len(idx) >= pc.min_names:
+            window = ret.iloc[i - pc.cov_window + 1 : i + 1]
             rets = window.to_numpy()[:, idx]
             expo = exposures_matrix(panel, i, names, rets)
-            leg = int(pc.leg_quantile * len(idx))
-            if expo is not None and leg >= 2:
+            leg = leg_size(len(idx), pc.leg_quantile)
+            if expo is None:
+                row["status"] = "exposures_unavailable"
+            elif leg < 2:
+                row["status"] = "leg_too_small"
+            else:
                 cov_d, shrink = ledoit_wolf(rets)
                 cov_m = MONTH * cov_d
                 z = _z(score.iloc[i].to_numpy()[idx])
                 w_prev = prev[idx]
                 closing = float(np.abs(prev).sum() - np.abs(w_prev).sum())
                 if method == "mv_lw":
-                    mu = pc.ic_assumed * np.sqrt(np.diag(cov_m)) * z
+                    ic, why = pc.ic_assumed, "assumed"
+                    if ic_by_pos is not None:
+                        est = estimate_at(ic_by_pos, i, pc.ic_horizon, run.backtest.delay)
+                        ic, why = resolve_ic(est, pc.ic_assumed, pc.ic_min_dates)
+                        row.update(
+                            ic_estimate=est.estimate,
+                            ic_std_error=est.std_error,
+                            ic_n_dates=est.n_dates,
+                        )
+                    row.update(ic_used=ic, ic_source_used=why)
+                    mu = ic * np.sqrt(np.diag(cov_m)) * z
                     res = mean_variance(mu, cov_m, cons, expo, w_prev, pc.risk_aversion, closing)
                 else:
                     order = np.argsort(z)
                     short, long = order[:leg], order[-leg:]
-                    rule = erc_weights if method == "risk_parity" else hrp_weights
+                    rule = erc_weights if method == "leg_risk_parity" else hierarchical_weights
                     target = np.zeros(len(idx))
                     target[long] = rule(cov_m[np.ix_(long, long)])
                     target[short] = -rule(cov_m[np.ix_(short, short)])
@@ -134,7 +170,7 @@ def build_weights(
                     names_at_cap=int((np.abs(w) >= cons.max_position - 1e-7).sum()),
                 )
                 prev = new
-        if row["status"] == "universe_too_small":
+        if row["status"] in SKIPPED:
             prev = np.zeros(len(cols))
         rows.append(row)
     out = pd.DataFrame(weights, index=panel.close.index, columns=cols)

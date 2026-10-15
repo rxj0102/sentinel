@@ -119,7 +119,7 @@ def test_unknown_method_and_small_universe(market) -> None:  # type: ignore[no-u
     with pytest.raises(ValueError):
         build_weights(panel, score, mem, RUN, "bogus")
     tiny = RunConfig(data=RUN.data, backtest=RUN.backtest, portfolio=PortfolioConfig(min_names=500))
-    res = build_weights(panel, score, mem, tiny, "hrp")
+    res = build_weights(panel, score, mem, tiny, "leg_hrp")
     assert (res.weights == 0).all().all()
     assert set(res.diagnostics["status"]) == {"universe_too_small"}
 

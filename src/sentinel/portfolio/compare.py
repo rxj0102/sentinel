@@ -14,7 +14,7 @@ from sentinel.backtest.engine import run_backtest, sensitivity_grid, summarize
 from sentinel.backtest.holdout import HoldoutGrant, HoldoutGuard
 from sentinel.backtest.trials import TrialRegistry, TrialSpec
 from sentinel.config import RunConfig
-from sentinel.portfolio.build import METHODS, build_weights
+from sentinel.portfolio.build import METHODS, SKIPPED, build_weights
 from sentinel.signals.base import Panel
 from sentinel.signals.composite import composite_score
 from sentinel.signals.portfolio_stats import quantile_weights
@@ -92,12 +92,16 @@ def run_portfolios(
     dsr["p_bh"] = stats.benjamini_hochberg(dsr["p_value"].tolist())
 
     all_diag = pd.concat(diag, ignore_index=True)
-    feas = all_diag.assign(infeasible=~all_diag["feasible"].astype(bool))
+    all_diag["skipped"] = all_diag["status"].isin(SKIPPED)
+    all_diag["attempted"] = ~all_diag["skipped"]
+    all_diag["fallback"] = all_diag["attempted"] & ~all_diag["feasible"].astype(bool)
     agg = (
-        feas.groupby("method")
+        all_diag.groupby("method")
         .agg(
             rebalances=("date", "count"),
-            infeasible_or_skipped=("infeasible", "sum"),
+            rebalances_attempted=("attempted", "sum"),
+            held_weight_fallbacks=("fallback", "sum"),
+            skipped_rebalances=("skipped", "sum"),
             mean_shrinkage=("shrinkage", "mean"),
             mean_gross=("gross", "mean"),
             mean_effective_n=("effective_n", "mean"),
@@ -108,8 +112,21 @@ def run_portfolios(
         )
         .reset_index()
     )
+    agg["fallback_share_of_attempted"] = agg["held_weight_fallbacks"] / agg[
+        "rebalances_attempted"
+    ].replace(0, float("nan"))
+    comparison = (
+        pd.DataFrame(summary)
+        .merge(
+            agg[["method", "rebalances_attempted", "held_weight_fallbacks", "skipped_rebalances"]],
+            left_on="variant",
+            right_on="method",
+            how="left",
+        )
+        .drop(columns="method")
+    )
     return {
-        "portfolio_comparison": pd.DataFrame(summary),
+        "portfolio_comparison": comparison,
         "portfolio_sensitivity": pd.concat(sens, ignore_index=True),
         "portfolio_diagnostics": agg,
         "portfolio_rebalances": all_diag,

@@ -2,7 +2,9 @@
 
 Behavioral alpha and risk platform built only on free data. It researches behavioral signals, builds portfolios from them, stress tests those portfolios, and monitors them as if live.
 
-Status: Phase 1 code gate closed pending CI and the REAL-DATA GATE. Phase 2 to Phase 4 engineering (signals, backtest engine, validation framework, portfolio construction) run on synthetic data only. Phase 5 waits for the real-data logs. Pre-registration is locked in docs/hypotheses.md. No empirical result on real data exists yet. Every number that will appear in this repo is written by code into results/ and nothing is quoted by hand.
+Status: Phase 1 code gate closed pending CI and the REAL-DATA GATE. Phase 2 to Phase 4 engineering (signals, backtest engine, validation framework, portfolio construction) run on synthetic data only. Phase 5 waits for the real-data logs.
+
+Where to look first: ASSUMPTIONS.md (every placeholder default), docs/hypotheses.md (pre-registration and amendments), docs/REAL_DATA_GATE.md (what blocks results), docs/REAL_DATA_RUNBOOK.md (first real run). Pre-registration is locked in docs/hypotheses.md. No empirical result on real data exists yet. Every number that will appear in this repo is written by code into results/ and nothing is quoted by hand.
 
 Related work: [behavioral-pricing-kernel](https://github.com/rxj0102/behavioral-pricing-kernel), a separate study of the empirical pricing kernel. Sentinel is standalone and never imports it.
 
@@ -34,7 +36,7 @@ CI runs on a deterministic synthetic market, needs no network and no secrets. No
 
 UNTESTED AGAINST LIVE ENDPOINTS. Parsers have offline contract tests, the network code does not. Run on a machine with network access and send back the full log and any errors.
 
-    export SENTINEL_USER_AGENT=sentinel-research your-email@example.com
+    export SENTINEL_USER_AGENT="sentinel-research your-email@example.com"
     sentinel data doctor                         # connectivity check for every host
     sentinel data rebuild --dry-run              # universe only, no price download
     sentinel data rebuild --limit 40             # small smoke test
@@ -43,6 +45,8 @@ UNTESTED AGAINST LIVE ENDPOINTS. Parsers have offline contract tests, the networ
 
 The rebuild stops at the end of the development window, so the holdout is not downloaded.
 Optional: set FRED_API_KEY (free key, no card) for macro series.
+
+If the first run fails, see docs/REAL_DATA_RUNBOOK.md for the five most likely failure points and the log line each produces.
 
 ## REAL-DATA GATE
 

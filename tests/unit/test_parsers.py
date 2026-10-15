@@ -77,3 +77,21 @@ def test_yfinance_normalizer() -> None:
     assert len(out) == 3
     assert set(out["ticker"]) == {"AAA", "BBB"}
     assert (out["available_date"] > out["date"]).all()
+
+
+def test_yfinance_normalizer_coerces_dtypes_and_defers_validation() -> None:
+    from sentinel.data.quarantine import quarantine_prices
+    from sentinel.data.schemas import PriceSchema
+
+    idx = pd.date_range("2020-01-01", periods=3, name="Date").astype("datetime64[us]")
+    fields = ["Open", "High", "Low", "Close", "Adj Close", "Volume"]
+    cols = pd.MultiIndex.from_product([fields, ["AAA"]], names=["Price", "Ticker"])
+    raw = pd.DataFrame(1.0, index=idx, columns=cols)
+    raw[("Volume", "AAA")] = pd.Series([100, 200, 300], index=idx, dtype="int64")
+    raw[("High", "AAA")] = [1.1, 0.5, 1.1]  # second row has high below low
+    raw[("Low", "AAA")] = 0.9
+    out = parsers.normalize_yfinance(raw)
+    assert str(out["date"].dtype) == "datetime64[ns]" and str(out["volume"].dtype) == "float64"
+    clean, _, stats = quarantine_prices(out)
+    assert stats["cells_blanked"] == 2
+    PriceSchema.validate(clean)

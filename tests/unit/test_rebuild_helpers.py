@@ -1,6 +1,7 @@
 import pandas as pd
 
-from sentinel.data.rebuild import build_universe, chunked
+from sentinel.data.prices_download import chunked
+from sentinel.data.rebuild import build_universe
 from sentinel.data.sources import parsers
 
 HTML = """

@@ -1,4 +1,4 @@
-"""Equal risk contribution (risk parity) weights for a long only book."""
+"""Equal risk contribution weights for one long only leg, used as leg-wise risk parity."""
 
 from __future__ import annotations
 

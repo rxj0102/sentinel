@@ -12,17 +12,15 @@ from pathlib import Path
 
 import pandas as pd
 
+from sentinel.data.prices_download import download_prices, exclusive_end
+from sentinel.data.quarantine import quarantine_prices
 from sentinel.data.schemas import PriceSchema
-from sentinel.data.sources import fetch, parsers
+from sentinel.data.sources import fetch
 from sentinel.data.storage import write_table
 from sentinel.data.universe import reconstruct_members_at
 from sentinel.logging import get_logger
 
 log = get_logger("rebuild")
-
-
-def chunked(items: list[str], size: int) -> list[list[str]]:
-    return [items[i : i + size] for i in range(0, len(items), size)]
 
 
 def build_universe(
@@ -65,24 +63,21 @@ def rebuild(
         log.info("dry_run_done", tickers=len(tickers))
         return
 
-    frames: list[pd.DataFrame] = []
-    empty: list[str] = []
-    for batch in chunked(tickers, batch_size):
-        ysyms = {parsers.to_yahoo_symbol(t): t for t in batch}
-        try:
-            got = fetch.fetch_yfinance_batch(list(ysyms), start, end)
-        except Exception as exc:  # noqa: BLE001 - one bad batch must not kill the run
-            log.error("batch_failed", batch=batch[:3], error=str(exc))
-            empty += batch
-            continue
-        if got.empty:
-            empty += batch
-            continue
-        got["ticker"] = got["ticker"].map(ysyms).fillna(got["ticker"])
-        frames.append(got)
-        empty += [t for t in batch if t not in set(got["ticker"])]
-        log.info("batch_ok", rows=len(got), tickers=got["ticker"].nunique())
-    prices = PriceSchema.validate(pd.concat(frames, ignore_index=True))
+    result = download_prices(
+        tickers,
+        lambda batch: fetch.fetch_yfinance_batch(batch, start, exclusive_end(end)),
+        batch_size=batch_size,
+    )
+    if not result.frames or result.batches_failed == result.batches_total:
+        raise RuntimeError(
+            f"all {result.batches_total} price batches failed or returned nothing. "
+            "Check connectivity with sentinel data doctor and the log above."
+        )
+    raw = pd.concat(result.frames, ignore_index=True)
+    clean, rejected, qstats = quarantine_prices(raw)
+    log.info("prices_quarantined", **qstats)
+    prices = PriceSchema.validate(clean)
+    empty = result.without_prices
 
     manifest = curated_dir / "manifest.json"
     write_table(prices, raw_dir / "prices_yahoo.parquet", raw_dir / "manifest.json")
@@ -104,11 +99,20 @@ def rebuild(
             indent=2,
         )
     )
-    log.info("prices_done", rows=len(prices), tickers_without_prices=len(empty))
+    log.info(
+        "rebuild_summary",
+        rows=len(prices),
+        tickers_requested=len(tickers),
+        tickers_without_prices=len(empty),
+        batches_total=result.batches_total,
+        batches_failed=result.batches_failed,
+        rows_rejected=qstats["rows_rejected"],
+        cells_blanked=qstats["cells_blanked"],
+    )
 
     if with_factors:
         for code in fetch.FRENCH_FILES:
             try:
                 write_table(fetch.fetch_french(code), curated_dir / f"{code}.parquet", manifest)
             except Exception as exc:  # noqa: BLE001
-                log.error("french_failed", code=code, error=str(exc))
+                log.error("french_failed", code=code, error=str(exc), error_type=type(exc).__name__)

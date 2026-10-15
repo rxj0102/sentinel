@@ -8,6 +8,7 @@ Rules:
    is not synthetic.
 4. Any mention of results/synthetic must sit on a line tagged [SYNTHETIC-ENGINEERING-ONLY]
    and must not be a FINDING.
+5. The risk parity and HRP variants are always written leg-wise in prose.
 """
 
 from __future__ import annotations
@@ -20,6 +21,12 @@ from sentinel.results import is_synthetic
 GATE_FILE = Path("docs/REAL_DATA_GATE.md")
 FINDING = re.compile(r"\[FINDING src=([^\]\s]+)\]")
 SYN_TAG = "[SYNTHETIC-ENGINEERING-ONLY]"
+# The two risk based variants must always carry the leg-wise qualifier in prose.
+QUALIFIED = re.compile(
+    r"(leg-wise|true long-short|textbook long-short) (hierarchical risk parity|risk parity|HRP)",
+    re.I,
+)
+BARE = re.compile(r"\b(hierarchical risk parity|risk parity|HRP)\b", re.I)
 BAD_CHARS = ("—", "–", '"', "“", "”")
 EXEMPT_DOCS = {"docs/REAL_DATA_GATE.md"}  # may describe the rules using the tag names
 
@@ -54,6 +61,8 @@ def check_docs(root: Path) -> list[str]:
             code = in_fence or line.startswith("    ")  # fenced or indented code
             if not code and any(c in line for c in BAD_CHARS):
                 errors.append(f"{loc}: dash or quotation mark in prose")
+            if not code and BARE.search(QUALIFIED.sub("", line)):
+                errors.append(f"{loc}: unqualified risk parity or HRP name, use leg-wise")
             if rel in EXEMPT_DOCS:
                 continue
             m = FINDING.search(line)

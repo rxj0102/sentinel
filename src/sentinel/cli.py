@@ -147,14 +147,22 @@ def rebuild_cmd(
     Needs SENTINEL_USER_AGENT in the environment. The end date defaults to the end of the
     development window, so the holdout period is never downloaded by this command.
     """
-    import logging
+    import traceback
 
     from sentinel.data.rebuild import rebuild
 
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    configure_logging()
-    logging.getLogger().addHandler(logging.FileHandler(log_file))
-    rebuild(start, end, limit=limit, dry_run=dry_run)
+    configure_logging(log_file=log_file)
+    log = get_logger("rebuild")
+    try:
+        rebuild(start, end, limit=limit, dry_run=dry_run)
+    except Exception as exc:  # noqa: BLE001 - the full traceback must reach the log file
+        log.error(
+            "rebuild_failed",
+            error=str(exc),
+            error_type=type(exc).__name__,
+            traceback=traceback.format_exc(),
+        )
+        raise typer.Exit(code=1) from exc
 
 
 signals_app = typer.Typer(help="Signal research commands", no_args_is_help=True)
@@ -227,6 +235,12 @@ def backtest_run(
     from sentinel.backtest.run import run_all
     from sentinel.backtest.trials import TrialRegistry
     from sentinel.config import load_run_config
+    from sentinel.portfolio.feasibility import (
+        FeasibilityError,
+        check_feasibility,
+        enforcement,
+        membership_counts,
+    )
     from sentinel.signals.base import panel_from_prices
 
     configure_logging()
@@ -253,13 +267,21 @@ def backtest_run(
         (out / "synthetic" / "trial_log.csv") if synthetic else Path("validation/trial_log.csv")
     )
     cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
+    membership = membership_from_meta(
+        json.loads((fixture / "meta.json").read_text()),
+        guard.dev_only(pd.read_parquet(fixture / "changes.parquet")),
+        cal,
+    )
+    enforce = enforcement(synthetic, run.portfolio.require_full_gross_feasibility)
+    try:
+        feas = check_feasibility(membership_counts(membership, run), run, enforce)
+    except FeasibilityError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+    log.info("feasibility", synthetic=synthetic, enforced=enforce, summary=feas.summary())
     tables = run_all(
         panel_from_prices(prices, cal),
-        membership_from_meta(
-            json.loads((fixture / "meta.json").read_text()),
-            guard.dev_only(pd.read_parquet(fixture / "changes.parquet")),
-            cal,
-        ),
+        membership,
         run.backtest,
         guard=guard,
         registry=registry,
@@ -286,7 +308,7 @@ def portfolio_run(
     out: Path = Path("results"),
     config: Path = Path("configs/ci_fixture.yaml"),
 ) -> None:
-    """Compare mean-variance, risk parity and HRP against the equal weight baseline.
+    """Compare mean-variance, leg-wise risk parity and leg-wise HRP against the baseline.
 
     Settings come from the pre-registered portfolio config. The holdout is never read.
     Every portfolio variant is registered as a trial.
@@ -295,7 +317,15 @@ def portfolio_run(
     from sentinel.backtest.trials import TrialRegistry
     from sentinel.config import load_run_config
     from sentinel.portfolio.compare import run_portfolios
+    from sentinel.portfolio.feasibility import (
+        FeasibilityError,
+        check_feasibility,
+        eligible_counts,
+        enforcement,
+    )
+    from sentinel.portfolio.report import render_portfolio_report
     from sentinel.signals.base import panel_from_prices
+    from sentinel.signals.composite import composite_score
 
     configure_logging()
     log = get_logger("portfolio")
@@ -316,13 +346,20 @@ def portfolio_run(
     registry = TrialRegistry(
         (out / "synthetic" / "trial_log.csv") if synthetic else Path("validation/trial_log.csv")
     )
-    tables = run_portfolios(
-        panel_from_prices(prices, cal),
-        membership_from_meta(meta, changes, cal),
-        run,
-        guard=guard,
-        registry=registry,
-    )
+    panel = panel_from_prices(prices, cal)
+    membership = membership_from_meta(meta, changes, cal)
+    score = composite_score(panel, membership, run.portfolio)
+    enforce = enforcement(synthetic, run.portfolio.require_full_gross_feasibility)
+    try:
+        feas = check_feasibility(eligible_counts(panel, score, membership, run), run, enforce)
+    except FeasibilityError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
+    log.info("feasibility", synthetic=synthetic, enforced=enforce, summary=feas.summary())
+    tables = run_portfolios(panel, membership, run, guard=guard, registry=registry)
     for name, table in tables.items():
         write_result(out, name, table, synthetic)
+    write_text_result(
+        out, "portfolio_report", render_portfolio_report(tables, synthetic, feas, run), synthetic
+    )
     log.info("portfolio_written", synthetic=synthetic, trials=registry.n_trials)

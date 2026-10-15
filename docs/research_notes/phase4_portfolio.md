@@ -6,7 +6,7 @@ Status: engineering only. Every output so far comes from the synthetic fixture a
 
 - Ledoit-Wolf covariance through scikit-learn, shrinking toward a scaled identity with the analytic intensity, so there is no shrinkage parameter to tune.
 - Mean-variance with the shrunk covariance and an assumed information coefficient to scale the composite score into expected returns.
-- The equal risk contribution rule by coordinate descent, and the hierarchical risk parity allocation (single linkage on the correlation distance, quasi-diagonalization, recursive bisection). Both are applied leg-wise, as leg-wise risk parity and leg-wise HRP.
+- The equal risk contribution rule by coordinate descent, and the hierarchical allocation (single linkage on the correlation distance, quasi-diagonalization, recursive bisection). Both are applied leg-wise, as leg-wise risk parity and leg-wise HRP.
 - One shared constraint set for all three: dollar neutral, gross, per name cap, factor exposure bounds on size, market beta and momentum, and a one way turnover cap that also counts forced closings. Mean-variance enforces it natively. Leg-wise risk parity and leg-wise HRP targets pass through a least change projection onto the same set.
 - A composite score from all six pre-registered signals with equal weights and locked signs.
 - A comparison that reports the pre-registered default cost cell as the headline, every sensitivity cell next to it, per construction diagnostics (effective number of names, risk concentration, realized exposures, infeasible rebalances, shrinkage), and deflated Sharpe with Holm and Benjamini-Hochberg adjustments.
@@ -34,3 +34,11 @@ The equal risk contribution and hierarchical allocation rules are long only and 
 ## Tested
 
 Ledoit-Wolf against an independent implementation of the published formulas, positive definiteness with more assets than observations, trace preservation, and the limits of the shrinkage intensity. The equal risk contribution rule against closed forms (diagonal, two asset, equal correlation) and equal risk contributions on random matrices. The hierarchical allocation against a hand computed three asset example, plus permutation invariance. Mean-variance against the unconstrained closed form, constraint satisfaction on random inputs, and variance falling as risk aversion rises. Projection leaves feasible targets unchanged and flags infeasible problems. Weights satisfy every constraint at every rebalance, appear only on rebalance rows after warm-up, hold only index members, and do not change when future data is perturbed. The headline uses only the default cell and matches its own cell in the grid. Every portfolio variant is registered as a trial, cells are not, and adopting a cell as a configuration is counted.
+
+## Follow-ups after review
+
+- The two risk based variants are renamed leg-wise risk parity and leg-wise HRP everywhere, and a CI check rejects the unqualified names in prose.
+- Pre-registration Amendment 2 fixes the procedure for replacing the assumed information coefficient: an expanding, point in time, development window rank IC estimate at the 21 day horizon, floored at zero, reported with its standard error and counted as a trial when applied. The assumed value stays the default.
+- A feasibility check runs before every portfolio and backtest run. It computes the names per leg and universe size that the position cap needs from the config, and compares them with the observed universe at every rebalance. Real data runs always enforce it and fail loudly. Synthetic runs report it and label the fixture a mechanism test.
+- Every portfolio report header now states, per construction, the rebalances attempted, held-weight fallbacks and skips, with a warning line whenever a fallback occurred.
+- Applying the IC estimate changes the portfolio settings in every variant trial hash, so all variant trials are registered again and counted. That is conservative.
