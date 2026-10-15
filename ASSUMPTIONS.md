@@ -29,7 +29,11 @@ A test checks that every numeric field of the backtest and portfolio configs is 
 
 | field | default | source or reason |
 |---|---|---|
-| ic_assumed | 0.02 | ASSUMPTION. Scales composite scores into expected returns for mean-variance. Not estimated from data. If the real information coefficient is lower, mean-variance overstates its edge. |
+| ic_assumed | 0.02 | ASSUMPTION. Scales composite scores into expected returns for mean-variance. Not estimated from data. If the real information coefficient is lower, mean-variance overstates its edge. It stays the default and may be replaced only by the procedure in docs/hypotheses.md Amendment 2, which counts as a trial. |
+| ic_source | assumed | Selects the assumed value or the pre-registered expanding development-window estimate. Default is the assumption. |
+| ic_horizon | 21 | Pre-registered horizon of the forward return used by the IC estimator, trading days. |
+| ic_min_dates | 24 | Pre-registered minimum number of usable dates before the estimate replaces the assumption. Chosen before any result. |
+| require_full_gross_feasibility | true | A switch, not a market parameter. Real runs always enforce the feasibility check, only synthetic runs may switch it off. |
 | cov_window | 252 | Pre-registered, one year of daily returns. Convention. |
 | cov_min_obs | 252 | Pre-registered, names need the full window. |
 | risk_aversion | 10 | Placeholder, sets how much variance is penalized against alpha. Chosen before any result. |

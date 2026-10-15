@@ -53,7 +53,7 @@ B. Missing returns. A held position whose price series ends (the name vanished) 
 
 C. Universe. Signals are masked by point in time index membership before any ranking or weighting. Before this amendment the backtest ranked every ticker with prices, including names that had not yet joined the index.
 
-D. Phase 4 portfolio construction. All numbers below are fixed now and are not tuned on results. Three constructions share the same composite alpha, the same universe, the same covariance estimate and the same constraints, so the comparison isolates the weighting rule.
+D. Phase 4 portfolio construction. All numbers below are fixed now and are not tuned on results. Three constructions (mean-variance, leg-wise risk parity, leg-wise HRP) share the same composite alpha, the same universe, the same covariance estimate and the same constraints, so the comparison isolates the weighting rule.
 
 | parameter | value |
 |---|---|
@@ -80,8 +80,34 @@ Definitions:
 - Alpha for mean-variance: monthly expected return equals ic_assumed times the monthly volatility of the name times the composite score. The value of ic_assumed is an assumption, not an estimate from data.
 - Covariance: Ledoit-Wolf shrinkage as implemented in scikit-learn, shrinking toward a scaled identity with the analytic intensity, so there is no shrinkage parameter to tune. Estimated on the cov_window trailing daily returns through the signal date and scaled to 21 days. Names with fewer than cov_min_obs observations are excluded from that rebalance.
 - Mean-variance: maximize alpha times weights minus half of risk_aversion times weights, covariance, weights, subject to the common constraints.
-- Risk parity: names are selected as the top and bottom leg_quantile of the composite score, as in the baseline. Within each leg, weights equalize risk contributions using the Ledoit-Wolf covariance. Legs are scaled to plus one and minus one.
-- Hierarchical risk parity: same legs. Within each leg, single linkage clustering on the distance sqrt of half of one minus correlation, quasi-diagonalization, and recursive bisection on cluster variance, as in Lopez de Prado (2016).
-- Common constraints, applied to all three: dollar neutral, gross at most max_gross, each name at most max_position in absolute weight, absolute exposure to log dollar volume, market beta and 12 minus 1 momentum each at most exposure_tol, and one way turnover at most turnover_cap_one_way per rebalance. Risk parity and hierarchical risk parity targets pass through the same constrained projection (least change in L2 norm), mean-variance enforces the constraints natively.
+- Leg-wise risk parity: names are selected as the top and bottom leg_quantile of the composite score, as in the baseline. Within each leg, weights equalize risk contributions using the Ledoit-Wolf covariance. Legs are scaled to plus one and minus one.
+- Leg-wise HRP: same legs. Within each leg, the hierarchical risk parity allocation of Lopez de Prado (2016) is applied, that is single linkage clustering on the distance sqrt of half of one minus correlation, quasi-diagonalization, and recursive bisection on cluster variance, as in Lopez de Prado (2016).
+- Common constraints, applied to all three: dollar neutral, gross at most max_gross, each name at most max_position in absolute weight, absolute exposure to log dollar volume, market beta and 12 minus 1 momentum each at most exposure_tol, and one way turnover at most turnover_cap_one_way per rebalance. Leg-wise risk parity and leg-wise HRP targets pass through the same constrained projection (least change in L2 norm), mean-variance enforces the constraints natively.
 - Baseline for comparison: the equal weight quantile portfolio on the same composite score.
-- Trials: composite signal with equal weights (signal), mean-variance, risk parity and hierarchical risk parity (each a portfolio variant). Each is registered and counted.
+- Trials: composite signal with equal weights (signal), mean-variance, leg-wise risk parity and leg-wise HRP (each a portfolio variant). Each is registered and counted.
+
+### Amendment 2 (2026-10-15), committed before the code it governs
+
+Amendment 1 wording was edited in this commit for names only, to use the leg-wise names below. No parameter or rule in it changed.
+
+A. Names and model description. The two risk based variants are named leg-wise risk parity and leg-wise HRP in code, tables and docs. The unqualified names are not used anywhere, and a CI check enforces that in prose. They are not true long-short risk parity. A true long-short version would equalize the risk contributions of one combined signed book. Here, names are first chosen by the composite score, a long only rule is applied inside each leg separately, the legs are scaled to plus one and minus one, and the result is constrained. The comparison isolates the weighting rule inside the legs and does not test those methods in their textbook form.
+
+B. Replacing the assumed information coefficient. The assumed value stays the default and stays listed in ASSUMPTIONS.md as an assumption. It may be replaced only by the following procedure, which is fixed now.
+
+| parameter | value |
+|---|---|
+| ic_source | assumed |
+| ic_horizon | 21 |
+| ic_min_dates | 24 |
+
+- Estimator: the mean of per-date Spearman rank correlations between the composite score at date s and the forward return over ic_horizon trading days (entry at the close one day after s), over point in time index members. Dates s are spaced ic_horizon trading days apart so that labels do not overlap. The standard error is Newey-West and is reported next to the estimate.
+- Data: the development window only, 2005 to 2022, never holdout data. The inputs pass through the holdout guard, and the code audit covers the path.
+- Point in time use: at rebalance date t, only dates s whose label ends on or before t are used, so no label extends past t. This is an expanding window estimate. A single full-window estimate is not allowed for a backtest over the same window, because it would be in sample for the parameter.
+- Minimum history: if fewer than ic_min_dates usable dates exist at t, the assumed value is used for that rebalance, and the fallback is counted and reported.
+- Floor: a negative estimate is replaced by zero, because the signs are locked and a negative coefficient would flip them. Each floored rebalance is counted and reported.
+- Counting: switching ic_source to the estimate is a new trial of the mean-variance variant. The trial parameters include ic_source, so it is registered and counted when applied, and it is applied at most once.
+- Reporting: the estimate, its standard error and the number of dates are reported next to the assumed value. The assumed value is never silently replaced.
+
+C. Feasibility before any real run. With a per name cap and a gross target, each leg needs at least the reciprocal of the cap, times half the gross, in names for the cap to allow full gross. The universe at each rebalance must therefore hold at least that many names per leg divided by the leg quantile. The code computes and prints both numbers from the config. Real data runs always enforce this check and fail loudly with the observed minimum and the date. Synthetic runs report the check and label it a mechanism test only. The check can be switched off only for synthetic runs.
+
+D. Infeasible constraint events. Every portfolio report header states, per construction, the number of rebalances attempted, the number that fell back to held weights because the constraints were infeasible, and the number skipped for lack of inputs. A warning line appears whenever any fallback occurred. There is no threshold below which the counts are hidden.
