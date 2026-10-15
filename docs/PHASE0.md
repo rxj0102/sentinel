@@ -141,7 +141,7 @@ Terms change. Each row must be re-verified by the sponsor before Phase 1 ends, a
 
 Not used: Reddit API, X, any paid or card gated service. Reddit sentiment from the original brief is dropped by the zero cost rules.
 
-Sample data policy: committed fixtures stay under 5 MB, well under the 50 MB cap. Larger caches go to GitHub Releases or Hugging Face with scripts/rebuild_data.py as the source of truth.
+Sample data policy (revised by decision D4): committed fixtures are synthetic and stay under 5 MB. No Yahoo derived data is published anywhere, including Releases and Hugging Face. Only sources whose terms allow redistribution (FRED, Ken French, EDGAR, GDELT) may be cached publicly. Everything else is rebuilt locally by scripts/rebuild_data.py. Published artifacts are code, config, and derived results.
 
 ## 5. Ranked behavioral hypotheses
 
@@ -180,9 +180,9 @@ Multiple testing: the number of signals, horizons, and parameter variants tried 
 
 1. Survivorship and point in time universe bias. Yahoo has no delisted tickers. Even with a historical constituent list, prices for removed names are mostly missing, which biases returns upward, most severely for short legs and for reversal and lottery signals, where the losers are exactly the names that vanish. Mitigation: construct the universe from the constituent change log, measure and report the fraction of historical members with missing prices per year, run sensitivity analysis (drop periods with high missingness, impose a delisting return assumption), and state in LIMITATIONS.md that all alpha estimates are upper bounds. This cannot be fully fixed on free data.
 2. Statistical power and data snooping. A free data, large cap, post 2005 sample gives modest power, and most published behavioral anomalies have decayed since publication. With six or more signals, several horizons, and several portfolio methods, a spurious winner is likely. Mitigation: pre-registration, trial counting, deflated Sharpe, a one time holdout, and a readiness to publish a null result. The risk is also reputational: a polished platform wrapped around a fragile alpha claim is worse than an honest null.
-3. Scope and source fragility. Seven modules plus paper, API, and dashboard is a large surface for one builder, and several sources (yfinance, pytrends, CBOE, AQR files) are unofficial or change format. A reproducibility claim fails if a source breaks. Mitigation: gates between phases, hash locked cached data in Releases so reproduction does not depend on live scrapers, source adapters with contract tests, graceful degradation for pytrends and CBOE, and a ruthless cut list (dashboard polish and Monte Carlo extras go before correctness work).
+3. Scope and source fragility. Seven modules plus paper, API, and dashboard is a large surface for one builder, and several sources (yfinance, pytrends, CBOE, AQR files) are unofficial or change format. A reproducibility claim fails if a source breaks. Mitigation: gates between phases, a local rebuild script with a data manifest (row counts and content hashes) so a rebuild can be checked against the original run, public caches only for redistributable sources, source adapters with contract tests, graceful degradation for pytrends and CBOE, and a ruthless cut list (dashboard polish and Monte Carlo extras go before correctness work).
 
-A secondary risk worth recording: redistributing Yahoo derived data in fixtures or caches may violate terms. See question 4.
+A secondary risk, now resolved by decision D4: no Yahoo derived data is redistributed.
 
 ## 8. Assumptions and what could be wrong (Phase 0)
 
@@ -204,6 +204,17 @@ A secondary risk worth recording: redistributing Yahoo derived data in fixtures 
 | 6 Surfaces | Dashboard, API with OpenAPI, tear sheet all generated from stored results |
 | 7 Hardening | Coverage at or above 85 percent on core, mypy strict on core, fresh clone reproduces headline figures in under 30 minutes, final skeptical review with an allocate or do not allocate statement |
 
-## 10. Questions for the sponsor
+## 10. Decision log (sponsor answers)
 
-See the chat reply. Answers will be recorded here once received.
+- D1. Sentinel is standalone and never imports behavioral-pricing-kernel. The README links to it as related work. A free-data option implied signal may be added later once forward collection has enough history.
+- D2. Universe is the S and P 500 with point in time membership. The per-year missing-price measurement and sensitivity checks are a required Phase 1 deliverable.
+- D3. Development window is 2005 to 2022. The holdout starts 2023-01 and ends on a fixed date written into configs/holdout.yaml on the day it is locked, so it does not drift. GDELT tone is evaluated only on its available sample and labeled short-sample.
+- D4. CI uses synthetic data. A local script rebuilds real caches. No Yahoo derived data is published. Only redistributable sources are cached publicly.
+- D5. Approved deviations from the original brief: analyst herding is replaced by 52 week high anchoring, and option implied skew is forward-only with realized skewness as the backtestable substitute. Both are documented as deviations in the README and the paper.
+- D6. Long-short is the primary variant with a flat borrow cost assumption (labeled an assumption) and a sensitivity grid over several borrow levels. A long-only variant is also reported.
+- D7. Forward collection is kept minimal. Raw CBOE snapshots are stored outside the public repo unless terms clearly allow redistribution. Only derived metrics are published. A keepalive prevents GitHub from disabling the schedule after 60 days of inactivity.
+- D8. MIT license. Hours per week: not yet provided (the answer contained an unfilled placeholder). Cut order if time runs short: API, then forward collection, then dashboard polish. Never cut the data layer, signal validation, backtest rigor, or the risk engine.
+
+## 11. Open item
+
+Weeks and hours per week are still unknown. The cut order is fixed, so this does not block work, but it determines whether the cuts are expected.
