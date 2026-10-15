@@ -26,13 +26,25 @@ def turnover(weights: pd.DataFrame) -> pd.Series:
     return 0.5 * weights.diff().abs().sum(axis=1).iloc[1:]
 
 
-def gross_ls_return(weights: pd.DataFrame, ret: pd.DataFrame, delay: int = 1) -> pd.Series:
-    """Daily long-short return before costs. Weights set at close t earn returns from t+delay.
+def quantile_weights_long_only(
+    signal: pd.DataFrame, quantile: float = 0.2, sign: int = 1
+) -> pd.DataFrame:
+    """Equal weight long only top quantile of sign * signal, summing to one."""
+    w = quantile_weights(signal, quantile, sign)
+    return w.clip(lower=0.0)
 
-    Missing returns are treated as zero (position is flat), which is a simplification.
+
+def gross_ls_return(weights: pd.DataFrame, ret: pd.DataFrame, delay: int = 1) -> pd.Series:
+    """Daily return before costs under the documented timing rule.
+
+    Weights decided at close t are traded at close t + delay and first earn the return of
+    day t + delay + 1. So the holding shift is delay + 1. (An earlier version shifted by
+    delay only, which let a trade at the signal close earn the next return. Fixed in Phase 3
+    and not used by any Phase 2 output.) Missing returns are treated as zero (position is
+    flat), a simplification.
     """
-    held = weights.shift(delay)
-    return (held * ret.fillna(0.0)).sum(axis=1).iloc[delay:]
+    held = weights.shift(delay + 1)
+    return (held * ret.fillna(0.0)).sum(axis=1).iloc[delay + 1 :]
 
 
 def capacity(

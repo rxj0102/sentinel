@@ -131,16 +131,31 @@ app.add_typer(signals_app, name="signals")
 
 
 @signals_app.command("research")
-def signals_research(fixture: Path = Path("data/fixtures"), out: Path = Path("results")) -> None:
+def signals_research(
+    fixture: Path = Path("data/fixtures"),
+    out: Path = Path("results"),
+    config: Path = Path("configs/ci_fixture.yaml"),
+) -> None:
     """IC, decay, turnover, capacity and orthogonalization for every signal."""
     from sentinel.signals.base import panel_from_prices
     from sentinel.signals.run import research
 
     configure_logging()
     log = get_logger("signals")
+    from sentinel.backtest.holdout import HoldoutGuard
+    from sentinel.config import load_run_config
+
     prices = pd.read_parquet(fixture / "prices.parquet")
     meta = json.loads((fixture / "meta.json").read_text())
     synthetic = bool(meta.get("synthetic", True))
+    d = load_run_config(config).data
+    guard = HoldoutGuard.for_run(
+        pd.Timestamp(d.holdout_start),
+        pd.Timestamp(d.holdout_end) if d.holdout_end else None,
+        synthetic,
+        results_root=out,
+    )
+    prices = guard.dev_only(prices)  # explicit development window, the holdout is never read
     cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
     for name, table in research(panel_from_prices(prices, cal)).items():
         write_result(out, name, table, synthetic)
@@ -156,3 +171,68 @@ def signals_model_cards(out: Path = Path("docs/model_cards")) -> None:
     out.mkdir(parents=True, exist_ok=True)
     for name, (_, spec) in REGISTRY.items():
         (out / f"{name}.md").write_text(render_model_card(spec))
+
+
+backtest_app = typer.Typer(help="Backtest and validation commands", no_args_is_help=True)
+app.add_typer(backtest_app, name="backtest")
+
+
+@backtest_app.command("run")
+def backtest_run(
+    fixture: Path = Path("data/fixtures"),
+    out: Path = Path("results"),
+    config: Path = Path("configs/ci_fixture.yaml"),
+    unlock_holdout: bool = False,
+    unlock_reason: str = "",
+) -> None:
+    """Run every pre-registered signal through the engine. No parameter is tuned.
+
+    The holdout is refused unless --unlock-holdout is given, a reason is stated, and the
+    holdout end date is written in the config. Every access is logged.
+    """
+    from sentinel.backtest.holdout import HoldoutGuard
+    from sentinel.backtest.run import run_all
+    from sentinel.backtest.trials import TrialRegistry
+    from sentinel.config import load_run_config
+    from sentinel.signals.base import panel_from_prices
+
+    configure_logging()
+    log = get_logger("backtest")
+    run = load_run_config(config)
+    prices = pd.read_parquet(fixture / "prices.parquet")
+    synthetic = bool(json.loads((fixture / "meta.json").read_text()).get("synthetic", True))
+    d = run.data
+    guard = HoldoutGuard.for_run(
+        pd.Timestamp(d.holdout_start),
+        pd.Timestamp(d.holdout_end) if d.holdout_end else None,
+        synthetic,
+        results_root=out,
+    )
+    grant = None
+    if unlock_holdout:
+        if d.holdout_end is not None:  # the locked end date bounds what can be read
+            prices = prices[prices["date"] <= pd.Timestamp(d.holdout_end)]
+        grant = guard.unlock(pd.Timestamp(prices["date"].max()), "cli backtest run", unlock_reason)
+        prices = guard.load(prices, grant=grant, caller="cli backtest run")
+    else:
+        prices = guard.dev_only(prices)
+    registry = TrialRegistry(
+        (out / "synthetic" / "trial_log.csv") if synthetic else Path("validation/trial_log.csv")
+    )
+    cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
+    tables = run_all(
+        panel_from_prices(prices, cal),
+        run.backtest,
+        guard=guard,
+        registry=registry,
+        unlock=grant,
+    )
+    for name, table in tables.items():
+        write_result(out, name, table, synthetic)
+    log.info(
+        "backtest_written",
+        synthetic=synthetic,
+        trials=registry.n_trials,
+        evaluations=registry.n_evaluations,
+        reruns=registry.n_reruns,
+    )

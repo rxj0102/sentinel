@@ -2,7 +2,7 @@
 
 Behavioral alpha and risk platform built only on free data. It researches behavioral signals, builds portfolios from them, stress tests those portfolios, and monitors them as if live.
 
-Status: Phase 1 code gate closed pending CI and the REAL-DATA GATE. Phase 2 engineering is running on synthetic data only. No empirical result on real data exists yet. Every number that will appear in this repo is written by code into results/ and nothing is quoted by hand.
+Status: Phase 1 code gate closed pending CI and the REAL-DATA GATE. Phase 2 and Phase 3 engineering (signals, backtest engine, validation framework) run on synthetic data only. Pre-registration is locked in docs/hypotheses.md. No empirical result on real data exists yet. Every number that will appear in this repo is written by code into results/ and nothing is quoted by hand.
 
 Related work: [behavioral-pricing-kernel](https://github.com/rxj0102/behavioral-pricing-kernel), a separate study of the empirical pricing kernel. Sentinel is standalone and never imports it.
 

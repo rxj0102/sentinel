@@ -25,6 +25,7 @@ fixture:
 quality: fixture
 	sentinel data quality --fixture data/fixtures --out results
 	sentinel signals research --fixture data/fixtures --out results
+	sentinel backtest run --fixture data/fixtures --out results
 	sentinel signals model-cards
 	sentinel docs-check
 

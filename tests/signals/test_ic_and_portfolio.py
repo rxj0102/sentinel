@@ -129,9 +129,15 @@ def test_gross_return_uses_lagged_weights() -> None:
     idx = pd.bdate_range("2020-01-01", periods=3)
     w = pd.DataFrame({"x": [1.0, 0.0, 0.0], "y": [-1.0, 0.0, 0.0]}, index=idx)
     r = pd.DataFrame({"x": [0.0, 0.10, 0.5], "y": [0.0, 0.02, 0.5]}, index=idx)
-    out = ps.gross_ls_return(w, r, delay=1)
-    assert out.iloc[0] == pytest.approx(0.08)  # day-1 returns earned by day-0 weights
+    out = ps.gross_ls_return(w, r, delay=0)  # trade at the signal close, earn next day
+    assert out.iloc[0] == pytest.approx(0.08)
     assert out.iloc[1] == pytest.approx(0.0)
+    # With the documented delay of one day, day-0 weights are traded at close 1 and earn day 2.
+    idx5 = pd.bdate_range("2020-01-01", periods=5)
+    w5 = pd.DataFrame({"x": [1.0, 0, 0, 0, 0], "y": [-1.0, 0, 0, 0, 0]}, index=idx5)
+    r5 = pd.DataFrame({"x": [0, 0.5, 0.10, 0.5, 0.5], "y": [0, 0.5, 0.02, 0.5, 0.5]}, index=idx5)
+    delayed = ps.gross_ls_return(w5, r5, delay=1)
+    assert delayed.iloc[0] == pytest.approx(0.08)  # the day-1 return is not earned
 
 
 def test_capacity_known_answer() -> None:
