@@ -15,9 +15,19 @@ def test_fixture_then_quality_end_to_end(tmp_path: Path) -> None:
     assert r.exit_code == 0, r.output
     r = runner.invoke(app, ["data", "quality", "--fixture", str(fx), "--out", str(out)])
     assert r.exit_code == 0, r.output
-    assert (out / "coverage_by_year.csv").exists()
-    assert (out / "survivorship_sensitivity.csv").exists()
-    assert all(v == 0 for v in json.loads((out / "integrity.json").read_text()).values())
+    syn = out / "synthetic"
+    assert (syn / "data_quality_coverage_by_year.csv").exists()
+    assert (syn / "data_quality_survivorship_sensitivity.csv").exists()
+    assert (syn / "data_quality_member_count_reconciliation.csv").exists()
+    assert all(
+        v == 0 for v in json.loads((syn / "data_quality_integrity.json").read_text()).values()
+    )
+    report = (syn / "data_quality_report.md").read_text()
+    assert report.startswith("SYNTHETIC DATA")
+    assert "Neither scenario set below is an estimate" in report
+    assert "upper_bound_survivorship_damage" in report and "milder_case" in report
+    meta = json.loads((syn / "data_quality_report.meta.json").read_text())
+    assert meta["synthetic"] is True
 
 
 def test_fixture_is_reproducible(tmp_path: Path) -> None:

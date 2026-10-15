@@ -83,12 +83,23 @@ class SensitivityRow:
     scenario: str
     ann_return: float
     n_days: int
+    scenario_set: str
 
 
 def _daily_missing_frac(close: pd.DataFrame, membership: pd.DataFrame) -> pd.Series:
     priced = close.reindex(columns=membership.columns).notna().reindex(membership.index)
     missing = (membership & ~priced.fillna(False)).sum(axis=1)
     return missing / membership.sum(axis=1).replace(0, np.nan)
+
+
+MILDER = "milder_case"
+UPPER = "upper_bound_survivorship_damage"
+
+
+def _set_name(value: float, values: tuple[float, ...], higher_is_milder: bool) -> str:
+    """Name the harshest scenario of a family the upper bound, the gentlest the milder case."""
+    milder = max(values) if higher_is_milder else min(values)
+    return MILDER if value == milder else UPPER
 
 
 def survivorship_sensitivity(
@@ -101,7 +112,8 @@ def survivorship_sensitivity(
 ) -> pd.DataFrame:
     """Annualised equal weight member return under alternative survivorship treatments.
 
-    Scenarios (all assumptions, none estimated from data we lack):
+    Two scenario sets, both assumptions and neither an estimate: the milder case and the
+    upper bound on survivorship damage, within each family below.
     - baseline: member days without a price are dropped, which biases returns upward.
     - delist_return: vanishing members receive a terminal return.
     - missing_imputed_penalty: missing members are assumed to earn the observed member
@@ -116,20 +128,32 @@ def survivorship_sensitivity(
         return float(np.prod(1 + s.to_numpy()) ** (252 / len(s)) - 1) if len(s) else float("nan")
 
     base = ew_member_return(rets, membership)
-    rows.append(SensitivityRow("baseline_missing_dropped", ann(base), int(base.notna().sum())))
+    rows.append(
+        SensitivityRow("baseline_missing_dropped", ann(base), int(base.notna().sum()), "baseline")
+    )
     for d in delist_returns:
         adj = ew_member_return(apply_delisting_returns(rets, membership, d), membership)
-        rows.append(SensitivityRow(f"delist_return_{d:+.2f}", ann(adj), int(adj.notna().sum())))
+        tag = _set_name(d, delist_returns, higher_is_milder=True)
+        rows.append(
+            SensitivityRow(f"delist_return_{d:+.2f}", ann(adj), int(adj.notna().sum()), tag)
+        )
     frac_missing = _daily_missing_frac(close, membership)
     obs = base
     for pen in imputation_penalties:
         imp = obs - pen / 252 * frac_missing
+        tag = _set_name(pen, imputation_penalties, higher_is_milder=False)
         rows.append(
-            SensitivityRow(f"missing_imputed_penalty_{pen:.2f}", ann(imp), int(imp.notna().sum()))
+            SensitivityRow(
+                f"missing_imputed_penalty_{pen:.2f}", ann(imp), int(imp.notna().sum()), tag
+            )
         )
     ok_years = set(coverage.loc[coverage["missing_frac"] <= max_missing_frac, "year"])
     sub = base[pd.DatetimeIndex(base.index).year.isin(list(ok_years))]
-    rows.append(SensitivityRow(f"years_missing_le_{max_missing_frac:.2f}", ann(sub), len(sub)))
+    rows.append(
+        SensitivityRow(
+            f"years_missing_le_{max_missing_frac:.2f}", ann(sub), len(sub), "restricted_sample"
+        )
+    )
     return pd.DataFrame([r.__dict__ for r in rows])
 
 
@@ -154,6 +178,8 @@ def integrity_checks(
 def quality_report(
     prices: pd.DataFrame,
     membership: pd.DataFrame,
+    expected_size: int = 500,
+    size_tolerance: int = 10,
     max_stale_days: int = 5,
     extreme_return: float = 0.5,
     max_missing_frac: float = 0.05,
@@ -163,7 +189,30 @@ def quality_report(
     return {
         "integrity": integrity_checks(prices, max_stale_days, extreme_return),
         "coverage_by_year": cov,
+        "member_count_reconciliation": reconcile_member_counts(
+            monthly_member_counts(membership), expected_size, size_tolerance
+        ),
         "survivorship_sensitivity": survivorship_sensitivity(
             close, membership, cov, max_missing_frac=max_missing_frac
         ),
     }
+
+
+def monthly_member_counts(membership: pd.DataFrame) -> pd.DataFrame:
+    """Index member count at each month end."""
+    counts = membership.sum(axis=1)
+    month_end = counts.groupby(pd.DatetimeIndex(counts.index).to_period("M")).last()
+    out = month_end.rename("members").reset_index()
+    out["month"] = out["index"].astype(str)
+    return out[["month", "members"]]
+
+
+def reconcile_member_counts(
+    counts: pd.DataFrame, expected: int = 500, tolerance: int = 10
+) -> pd.DataFrame:
+    """Flag months whose member count is further than tolerance from expected."""
+    out = counts.copy()
+    out["expected"] = expected
+    out["deviation"] = out["members"] - expected
+    out["ok"] = out["deviation"].abs() <= tolerance
+    return out

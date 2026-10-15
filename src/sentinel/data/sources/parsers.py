@@ -47,6 +47,19 @@ def parse_sp500_changes(html: str) -> pd.DataFrame:
     raise ValueError("no S and P 500 changes table found")
 
 
+def parse_sp500_current(html: str) -> list[str]:
+    """Parse the current constituents table (Symbol column) from the same Wikipedia page."""
+    for t in pd.read_html(io.StringIO(html)):
+        if not isinstance(t.columns, pd.MultiIndex) and "Symbol" in t.columns:
+            return [str(x).strip() for x in t["Symbol"].dropna()]
+    raise ValueError("no constituents table found")
+
+
+def to_yahoo_symbol(symbol: str) -> str:
+    """Wikipedia writes BRK.B, Yahoo expects BRK-B."""
+    return symbol.strip().replace(".", "-")
+
+
 def parse_french_daily(text: str, series_prefix: str, lag_days: int = 60) -> pd.DataFrame:
     """Parse a Ken French daily factor CSV into long SeriesSchema format.
 

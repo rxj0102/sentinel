@@ -10,3 +10,5 @@ Living file. Phase 1 entries only so far. Likelihood and impact are the builder 
 | R4 | Unofficial source breakage prevents reproduction | High | Medium | Parsers separated from fetchers with offline contract tests, local rebuild script, graceful degradation | Open |
 | R5 | Synthetic CI data hides real data problems | Medium | Medium | Synthetic generator reproduces delistings and absent histories. Real data checks run locally. | Open |
 | R6 | Wikipedia change log gaps distort membership | Medium | Medium | Reconcile member count to the expected index size each month and report gaps | Planned, needs real data |
+| R7 | Synthetic engineering results leak into docs as findings | Medium | High | REAL-DATA GATE (issue 1), sidecar labels, CI docs-check | Mitigated in code |
+| R8 | Rebuild scripts fail on live endpoints because they are untested there | High | Medium | Offline parser tests, doctor command, sponsor returns logs, fixes land in parsers | Open |

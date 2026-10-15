@@ -23,7 +23,8 @@ fixture:
 	sentinel data make-fixture --out data/fixtures
 
 quality: fixture
-	sentinel data quality --fixture data/fixtures --out results/data_quality
+	sentinel data quality --fixture data/fixtures --out results
+	sentinel docs-check
 
 check: lint typecheck test
 

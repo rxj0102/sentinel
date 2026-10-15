@@ -1,6 +1,8 @@
 # Costs and dependencies
 
-Everything here is free for a public repo with no credit card. Terms below were not re-verified in this session because the build environment cannot reach these sites. The sponsor must verify each row and record the date before Phase 1 closes.
+Everything here is free for a public repo with no credit card. Terms below were not verified by the builder because the build environment cannot reach these sites. The sponsor verifies each source terms personally.
+
+Terms verified on: (blank, sponsor to fill in per source)
 
 | Dependency | Type | License or terms | Free limits | What breaks if terms change |
 |---|---|---|---|---|
