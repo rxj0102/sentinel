@@ -1,0 +1,41 @@
+start: 2010-01-04
+dev_end: 2011-12-30
+holdout_start: 2012-01-03
+holdout_end: 2012-12-31
+seed: 0
+
+# Execution assumptions. Every value here is an assumption, not a measurement.
+backtest:
+  delay: 1
+  rebalance_every: 21
+  quantile: 0.2
+  aum: 10000000
+  commission_bps: 0.5
+  half_spread_bps: 2.0
+  slippage_bps: 1.0
+  impact_coeff: 0.1
+  max_position: 0.03
+  max_gross: 2.0
+  max_participation: 0.05
+  borrow_rate_annual: 0.01   # ASSUMPTION, flat. Always read results across borrow_grid.
+  borrow_rate_is_assumption: true
+  missing_return_treatment: delisting_adverse   # ASSUMPTION, conservative default
+  delisting_return: -0.30                        # ASSUMPTION, milder survivorship scenario
+
+# Pre-registered portfolio settings (docs/hypotheses.md, Amendment 1). ic_assumed is an assumption.
+portfolio:
+  ic_assumed: 0.02
+  cov_window: 252
+  cov_min_obs: 252
+  risk_aversion: 10
+  leg_quantile: 0.2
+  composite_min_signals: 4
+  min_names: 10
+  exposure_tol: 0.10
+  turnover_cap_one_way: 0.5
+  winsorize_lower: 0.01
+  winsorize_upper: 0.99
+  ic_source: assumed
+  ic_horizon: 21
+  ic_min_dates: 24
+  require_full_gross_feasibility: false   # synthetic mechanism test only
