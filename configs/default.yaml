@@ -20,3 +20,19 @@ backtest:
   max_participation: 0.05
   borrow_rate_annual: 0.01   # ASSUMPTION, flat. Always read results across borrow_grid.
   borrow_rate_is_assumption: true
+  missing_return_treatment: delisting_adverse   # ASSUMPTION, conservative default
+  delisting_return: -0.30                        # ASSUMPTION, milder survivorship scenario
+
+# Pre-registered portfolio settings (docs/hypotheses.md, Amendment 1). ic_assumed is an assumption.
+portfolio:
+  ic_assumed: 0.02
+  cov_window: 252
+  cov_min_obs: 252
+  risk_aversion: 10
+  leg_quantile: 0.2
+  composite_min_signals: 4
+  min_names: 10
+  exposure_tol: 0.10
+  turnover_cap_one_way: 0.5
+  winsorize_lower: 0.01
+  winsorize_upper: 0.99

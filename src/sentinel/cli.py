@@ -12,13 +12,26 @@ from sentinel.data import quality
 from sentinel.data.report import render_report
 from sentinel.data.storage import write_table
 from sentinel.data.synthetic import make_market
-from sentinel.data.universe import membership_matrix
+from sentinel.data.universe import membership_from_meta, membership_matrix
 from sentinel.logging import configure_logging, get_logger
 from sentinel.results import write_result, write_text_result
 
 app = typer.Typer(help="Sentinel: behavioral alpha and risk platform", no_args_is_help=True)
 data_app = typer.Typer(help="Data layer commands", no_args_is_help=True)
 app.add_typer(data_app, name="data")
+
+
+@app.command("audit-holdout")
+def audit_holdout_cmd(root: Path = Path(".")) -> None:
+    """Fail if code outside the engine can read data at or after the holdout start."""
+    from sentinel.audit import scan_tree
+
+    problems = scan_tree(root)
+    for p in problems:
+        typer.echo(p)
+    if problems:
+        raise typer.Exit(code=1)
+    typer.echo("holdout audit ok")
 
 
 @app.command("docs-check")
@@ -61,14 +74,32 @@ def make_fixture(out: Path = Path("data/fixtures"), seed: int = 0, periods: int 
 
 
 @data_app.command("quality")
-def quality_cmd(fixture: Path = Path("data/fixtures"), out: Path = Path("results")) -> None:
-    """Data quality and survivorship report. Reads the meta file to know if data is synthetic."""
+def quality_cmd(
+    fixture: Path = Path("data/fixtures"),
+    out: Path = Path("results"),
+    config: Path = Path("configs/ci_fixture.yaml"),
+) -> None:
+    """Data quality and survivorship report. Reads the meta file to know if data is synthetic.
+
+    Only the development window is read, the holdout is dropped through the guard.
+    """
+    from sentinel.backtest.holdout import HoldoutGuard
+    from sentinel.config import load_run_config
+
     configure_logging()
     log = get_logger("quality")
     prices = pd.read_parquet(fixture / "prices.parquet")
     changes = pd.read_parquet(fixture / "changes.parquet")
     meta = json.loads((fixture / "meta.json").read_text())
     synthetic = bool(meta.get("synthetic", True))
+    d = load_run_config(config).data
+    guard = HoldoutGuard.for_run(
+        pd.Timestamp(d.holdout_start),
+        pd.Timestamp(d.holdout_end) if d.holdout_end else None,
+        synthetic,
+        results_root=out,
+    )
+    prices = guard.dev_only(prices)
     cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
     mem = membership_matrix(
         set(meta["initial_members"]), pd.Timestamp(meta["initial_date"]), changes, cal
@@ -157,7 +188,9 @@ def signals_research(
     )
     prices = guard.dev_only(prices)  # explicit development window, the holdout is never read
     cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
-    for name, table in research(panel_from_prices(prices, cal)).items():
+    changes = guard.dev_only(pd.read_parquet(fixture / "changes.parquet"))
+    membership = membership_from_meta(meta, changes, cal)
+    for name, table in research(panel_from_prices(prices, cal), membership).items():
         write_result(out, name, table, synthetic)
     log.info("signals_written", out=str(out), synthetic=synthetic)
 
@@ -222,6 +255,11 @@ def backtest_run(
     cal = pd.DatetimeIndex(sorted(prices["date"].unique()))
     tables = run_all(
         panel_from_prices(prices, cal),
+        membership_from_meta(
+            json.loads((fixture / "meta.json").read_text()),
+            guard.dev_only(pd.read_parquet(fixture / "changes.parquet")),
+            cal,
+        ),
         run.backtest,
         guard=guard,
         registry=registry,

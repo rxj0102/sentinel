@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pandas as pd
 from typer.testing import CliRunner
 
 from sentinel.cli import app
@@ -14,7 +15,9 @@ runner = CliRunner()
 
 def test_research_tables_shape() -> None:
     m = make_market(periods=400)
-    tables = research(panel_from_prices(m.prices, m.calendar), horizons=(1, 5))
+    panel = panel_from_prices(m.prices, m.calendar)
+    all_in = pd.DataFrame(True, index=panel.close.index, columns=panel.close.columns)
+    tables = research(panel, all_in, horizons=(1, 5))
     dec = tables["signals_ic_decay"]
     assert set(dec["signal"]) == set(REGISTRY) and set(dec["horizon"]) == {1, 5}
     assert len(tables["signals_portfolio"]) == len(REGISTRY)
@@ -36,3 +39,19 @@ def test_cli_research_labels_synthetic(tmp_path: Path) -> None:
     cards = tmp_path / "cards"
     assert runner.invoke(app, ["signals", "model-cards", "--out", str(cards)]).exit_code == 0
     assert len(list(cards.glob("*.md"))) == len(REGISTRY)
+
+
+def test_universe_mask_removes_non_members() -> None:
+    from sentinel.data.universe import mask_to_members
+
+    m = make_market(periods=300)
+    panel = panel_from_prices(m.prices, m.calendar)
+    sig = panel.close.copy()
+    member = pd.DataFrame(True, index=sig.index, columns=sig.columns)
+    member.iloc[:, 0] = False
+    out = mask_to_members(sig, member)
+    assert out.iloc[:, 0].isna().all() and out.iloc[:, 1:].notna().any().any()
+    # Names added to the index later are excluded before they join.
+    mem = pd.DataFrame(False, index=sig.index, columns=sig.columns)
+    mem.iloc[100:, 1] = True
+    assert mask_to_members(sig, mem).iloc[:100, 1].isna().all()

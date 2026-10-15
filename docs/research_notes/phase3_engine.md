@@ -38,3 +38,10 @@ Status: engineering only. Every output so far comes from the synthetic fixture a
 ## Tested
 
 Known answer cost and borrow math, timing, limits, no look ahead under perturbation, monotone sensitivity grid, holdout refusal without the flag, grant rules, once-only unlock across guard instances, trial counting across processes, DSR against independent formulas, multiple testing known answers and ordering properties, and no overlap including embargo for both split schemes.
+
+## Corrections after Phase 3 review (Amendment 1)
+
+5. Missing returns were counted as zero, so a held position in a vanished name looked flat. The engine now applies a conservative adverse delisting return by default (config option, tied to the milder survivorship scenario, an assumption) and closes the position. A test shows a delisted name does not look flat, for longs and shorts. A price gap that resumes stays flat and is counted.
+6. Signals were ranked over every ticker with prices, including names that had not yet joined the index. Signals are now masked to point in time membership before ranking.
+7. The new holdout audit found that the membership change log was read without the guard, and a change dated inside the holdout would reveal holdout period information. The log is now clipped to the development window before use.
+8. Cost sensitivity rule: the headline result uses the pre-registered default cell only, every cell is reported, and using a cell to choose a configuration makes it a trial.

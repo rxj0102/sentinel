@@ -27,6 +27,7 @@ quality: fixture
 	sentinel signals research --fixture data/fixtures --out results
 	sentinel backtest run --fixture data/fixtures --out results
 	sentinel signals model-cards
+	sentinel audit-holdout
 	sentinel docs-check
 
 check: lint typecheck test

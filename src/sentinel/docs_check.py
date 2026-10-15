@@ -30,7 +30,12 @@ def gate_closed(root: Path) -> bool:
 
 
 def doc_files(root: Path) -> list[Path]:
-    files = [root / "README.md", root / "COSTS.md", root / "RISK_REGISTER.md"]
+    files = [
+        root / "README.md",
+        root / "COSTS.md",
+        root / "RISK_REGISTER.md",
+        root / "ASSUMPTIONS.md",
+    ]
     files += sorted((root / "docs").rglob("*.md")) + sorted((root / "paper").rglob("*.md"))
     return [f for f in files if f.exists()]
 

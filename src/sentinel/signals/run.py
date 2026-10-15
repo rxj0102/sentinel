@@ -5,6 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from sentinel.data.universe import mask_to_members
 from sentinel.signals import ic as icmod
 from sentinel.signals import orthogonalize as orth
 from sentinel.signals import portfolio_stats as ps
@@ -14,7 +15,9 @@ from sentinel.signals.library import REGISTRY
 HORIZONS = (1, 5, 10, 21, 63)
 
 
-def research(panel: Panel, horizons: tuple[int, ...] = HORIZONS) -> dict[str, pd.DataFrame]:
+def research(
+    panel: Panel, membership: pd.DataFrame, horizons: tuple[int, ...] = HORIZONS
+) -> dict[str, pd.DataFrame]:
     """Run every registered signal. Returns tables keyed by name.
 
     Tables: ic_decay (per signal and horizon), portfolio (turnover and capacity per signal),
@@ -28,7 +31,7 @@ def research(panel: Panel, horizons: tuple[int, ...] = HORIZONS) -> dict[str, pd
     decay_rows, port_rows, ortho_rows = [], [], []
     fwd21 = forward_returns(panel.close, 21)
     for name, (fn, spec) in REGISTRY.items():
-        sig = fn(panel)
+        sig = mask_to_members(fn(panel), membership)
         dec = icmod.decay_table(sig, panel.close, {h: spec.sign_at(h) for h in horizons}, horizons)
         dec.insert(0, "signal", name)
         decay_rows.append(dec)

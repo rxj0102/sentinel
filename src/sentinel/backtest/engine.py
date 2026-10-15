@@ -34,6 +34,20 @@ def rebalance(weights: pd.DataFrame, every: int) -> pd.DataFrame:
     return weights.where(pd.Series(mask, index=weights.index), np.nan).ffill()
 
 
+def terminal_positions(close: pd.DataFrame) -> np.ndarray:
+    """Position of the first missing day after each ticker last valid price.
+
+    Returns an integer per column, equal to len(close) + 10 when the ticker is still priced on
+    the last day (it never vanishes inside the sample) or never has a price. A ticker with a
+    price gap that later resumes is not terminal, only a series that ends is.
+    """
+    valid = close.notna().to_numpy()
+    n = valid.shape[0]
+    has = valid.any(axis=0)
+    last = np.where(has, n - 1 - np.argmax(valid[::-1], axis=0), -1)
+    return np.where(has & (last < n - 1), last + 1, n + 10)
+
+
 @dataclass(frozen=True)
 class BacktestResult:
     gross: pd.Series
@@ -47,6 +61,10 @@ class BacktestResult:
     borrow_rate: float
     cost_multiplier: float
     trial_hash: str
+    missing_treatment: str = "delisting_adverse"
+    delisting_events: int = 0  # held positions closed because the name vanished
+    delisting_pnl: float = 0.0  # P&L booked from those events, fraction of NAV
+    gap_days_held: int = 0  # held position days with a missing return that later resumed
 
 
 def run_backtest(
@@ -84,8 +102,31 @@ def run_backtest(
     )
     limited = cm.apply_limits(target, cfg.max_position, cfg.max_gross)
     exec_w = limited.shift(cfg.delay).fillna(0.0)  # position held from the trade close
+    n_rows = len(exec_w)
+    term = terminal_positions(panel.close.reindex(weights.index).reindex(columns=exec_w.columns))
+    gone = np.arange(n_rows)[:, None] >= term[None, :]
+    exec_w = exec_w.mask(pd.DataFrame(gone, index=exec_w.index, columns=exec_w.columns), 0.0)
     held = exec_w.shift(1).fillna(0.0)
-    gross = (held * ret.fillna(0.0)).sum(axis=1)
+    pnl = (held * ret.fillna(0.0)).to_numpy().copy()
+    d_events, d_pnl = 0, 0.0
+    treatment = cfg.missing_return_treatment
+    if treatment != "zero":
+        held_np = held.to_numpy()
+        for j in np.flatnonzero(term < n_rows):
+            h = held_np[term[j], j]
+            if h != 0.0:
+                cell = (
+                    -abs(h) * abs(cfg.delisting_return)
+                    if treatment == "delisting_adverse"
+                    else h * cfg.delisting_return
+                )
+                pnl[term[j], j] = cell
+                d_events += 1
+                d_pnl += cell
+    nan_ret = ret.isna().to_numpy()
+    not_terminal = np.arange(n_rows)[:, None] < term[None, :]
+    gap_days = int(((held.to_numpy() != 0) & nan_ret & not_terminal).sum())
+    gross = pd.Series(pnl.sum(axis=1), index=exec_w.index)
 
     sigma, adv = cm.cost_inputs(panel.ret, panel.dollar_volume)
     sigma, adv = sigma.reindex(weights.index), adv.reindex(weights.index)
@@ -110,6 +151,10 @@ def run_backtest(
         borrow_rate=rate,
         cost_multiplier=cost_multiplier,
         trial_hash=digest,
+        missing_treatment=treatment,
+        delisting_events=d_events,
+        delisting_pnl=d_pnl,
+        gap_days_held=gap_days,
     )
     if trial.kind in COUNTED_KINDS or trial.kind == "sensitivity":
         skew, kurt = moments(result.net)
@@ -136,6 +181,9 @@ def summarize(res: BacktestResult, periods: int = 252) -> dict[str, float]:
         "participation_breach_share": (
             res.participation_breaches / res.nonzero_trades if res.nonzero_trades else np.nan
         ),
+        "delisting_events": float(res.delisting_events),
+        "delisting_pnl": res.delisting_pnl,
+        "gap_days_held": float(res.gap_days_held),
         "borrow_rate_assumed": res.borrow_rate,
         "cost_multiplier": res.cost_multiplier,
         "n_days": float(len(n)),

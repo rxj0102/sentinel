@@ -16,6 +16,7 @@ from sentinel.backtest.holdout import HoldoutGrant, HoldoutGuard
 from sentinel.backtest.trials import TrialRegistry, TrialSpec
 from sentinel.backtest.validation import fold_sharpes, purged_kfold_splits, walk_forward_splits
 from sentinel.config import BacktestConfig
+from sentinel.data.universe import mask_to_members
 from sentinel.signals.base import Panel
 from sentinel.signals.library import REGISTRY
 from sentinel.signals.portfolio_stats import quantile_weights, quantile_weights_long_only
@@ -26,6 +27,7 @@ WF_TRAIN, WF_TEST, KFOLDS, EMBARGO = 126, 63, 5, 5  # fixed, reporting only, nev
 
 def run_all(
     panel: Panel,
+    membership: pd.DataFrame,
     cfg: BacktestConfig,
     *,
     guard: HoldoutGuard,
@@ -44,7 +46,7 @@ def run_all(
                 k: v.default for k, v in inspect.signature(fn).parameters.items() if k != "panel"
             },
         }
-        sig = fn(panel)
+        sig = mask_to_members(fn(panel), membership)
         variants = {
             "long_short": ("signal", quantile_weights(sig, cfg.quantile, sign)),
             "long_only": ("portfolio_variant", quantile_weights_long_only(sig, cfg.quantile, sign)),

@@ -47,3 +47,28 @@ def membership_matrix(
         if isinstance(row.removed, str) and row.removed in state.columns:
             state.loc[mask, row.removed] = False
     return state
+
+
+def membership_from_meta(
+    meta: dict[str, object], changes: pd.DataFrame, calendar: pd.DatetimeIndex
+) -> pd.DataFrame:
+    """Membership matrix from the meta file and an already guarded change log.
+
+    The caller must clip changes to the development window first, a change dated inside the
+    holdout reveals holdout period information.
+    """
+    initial = meta["initial_members"]
+    assert isinstance(initial, list)
+    return membership_matrix(
+        set(initial), pd.Timestamp(str(meta["initial_date"])), changes, calendar
+    )
+
+
+def mask_to_members(signal: pd.DataFrame, membership: pd.DataFrame) -> pd.DataFrame:
+    """NaN out signal values for names that are not index members that day.
+
+    Without this, ranking would include names that had not yet joined the index, which is a
+    look-ahead in the universe.
+    """
+    member = membership.reindex(index=signal.index, columns=signal.columns).fillna(False)
+    return signal.where(member.astype(bool))
