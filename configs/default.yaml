@@ -1,0 +1,6 @@
+start: 2005-01-03
+dev_end: 2022-12-30
+holdout_start: 2023-01-03
+# holdout_end is written here on the day the holdout is locked (decision D3).
+holdout_end: null
+seed: 0
