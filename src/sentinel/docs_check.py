@@ -1,7 +1,7 @@
 """Documentation gate checks, run in CI.
 
 Rules:
-1. Style: no em-dashes, en-dashes or quotation marks outside fenced code blocks.
+1. Style: no em-dashes, en-dashes or quotation marks outside code blocks (fenced or indented).
 2. A finding in docs is a line tagged [FINDING src=<results path>]. While the REAL-DATA GATE
    is open, no FINDING tag may exist at all.
 3. Even with the gate closed, a FINDING must cite an existing result whose sidecar says it
@@ -46,7 +46,8 @@ def check_docs(root: Path) -> list[str]:
                 in_fence = not in_fence
                 continue
             loc = f"{rel}:{n}"
-            if not in_fence and any(c in line for c in BAD_CHARS):
+            code = in_fence or line.startswith("    ")  # fenced or indented code
+            if not code and any(c in line for c in BAD_CHARS):
                 errors.append(f"{loc}: dash or quotation mark in prose")
             if rel in EXEMPT_DOCS:
                 continue

@@ -46,7 +46,7 @@ Optional: set FRED_API_KEY (free key, no card) for macro series.
 
 ## REAL-DATA GATE
 
-No signal result, figure, or number from Phase 2 onward may appear in any doc until the real-data survivorship report exists and the monthly membership count reconciles to about 500. See docs/REAL_DATA_GATE.md. Outputs from the synthetic fixture are written under results/synthetic, carry a synthetic label, and CI fails if docs cite them as findings (sentinel docs-check).
+No signal result, figure, or number from Phase 2 onward may appear in any doc until the real-data survivorship report exists and the monthly membership count reconciles to about 500. See docs/REAL_DATA_GATE.md. Outputs from the synthetic fixture are written under results/synthetic [SYNTHETIC-ENGINEERING-ONLY], carry a synthetic label, and CI fails if docs cite them as findings (sentinel docs-check).
 
 ## Layout
 

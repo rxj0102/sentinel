@@ -65,3 +65,7 @@ def test_cli_exit_codes(tmp_path: Path) -> None:
     _root(bad, "[FINDING src=results/x.csv]\n")
     assert runner.invoke(app, ["docs-check", "--root", str(good)]).exit_code == 0
     assert runner.invoke(app, ["docs-check", "--root", str(bad)]).exit_code == 1
+
+
+def test_indented_code_is_exempt(tmp_path: Path) -> None:
+    assert check_docs(_root(tmp_path, '    pip install ".[dev]"\n')) == []
