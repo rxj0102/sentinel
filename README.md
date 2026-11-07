@@ -1,5 +1,7 @@
 # Sentinel
 
+[![CI](https://github.com/rxj0102/sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/rxj0102/sentinel/actions/workflows/ci.yml)
+
 Behavioral alpha and risk platform built only on free data. It researches behavioral signals, builds portfolios from them, stress tests those portfolios, and monitors them as if live.
 
 Status: Phase 1 code gate closed pending CI and the REAL-DATA GATE. Phase 2 to Phase 4 engineering (signals, backtest engine, validation framework, portfolio construction) run on synthetic data only. Phase 5 waits for the real-data logs.
