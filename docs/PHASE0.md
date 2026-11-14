@@ -27,7 +27,7 @@ Relation to the existing repo behavioral-pricing-kernel: that repo targets a pri
                       backtest engine (event-aware, costs, borrow)
                          walk-forward, purged k-fold, DSR, holdout
                                       │
-                      portfolio construction (MV-LW, RP, HRP)
+                      portfolio construction (MV-LW, leg-wise RP, leg-wise HRP)
                                       │
                     risk engine (VaR/ES, Kupiec, Christoffersen,
                        regimes, factor decomposition, stress)
@@ -50,7 +50,7 @@ Technology choices:
 
 - Python 3.11, pandas, numpy, scipy, statsmodels, scikit-learn (Ledoit-Wolf), pyarrow, pandera, pydantic v2, typer, structlog, PyYAML.
 - Regimes via statsmodels MarkovRegression first (one fewer fragile dependency than hmmlearn); hmmlearn as an optional comparison.
-- Portfolio: own implementations of HRP and risk parity checked against closed forms; cvxpy only if constrained MV needs it (open source, free).
+- Portfolio: own implementations of the equal risk contribution rule and the hierarchical allocation (used leg-wise as leg-wise risk parity and leg-wise HRP), checked against closed forms; cvxpy only if constrained MV needs it (open source, free).
 - Reporting: Streamlit, plotly, ReportLab (pure Python, no system dependencies, so CI and Docker stay simple). WeasyPrint rejected for system library overhead.
 - Quality: ruff, black, mypy strict on core, pytest, pytest-cov, hypothesis, pre-commit.
 - Infra: Docker, docker-compose, GitHub Actions, Makefile.
@@ -109,7 +109,7 @@ Technology choices:
     │   │                          purged k-fold), stats.py (DSR, multiple testing),
     │   │                          holdout.py (hash-locked, one touch)
     │   ├── portfolio/             covariance.py, mean_variance.py, risk_parity.py,
-    │   │                          hrp.py, constraints.py, compare.py
+    │   │                          hierarchical.py, constraints.py, compare.py
     │   ├── risk/                  var.py, es.py, var_backtest.py, regimes.py,
     │   │                          factor_risk.py, stress.py
     │   ├── monitoring/            signal_health.py (decay, drift), alerts.py
@@ -199,7 +199,7 @@ A secondary risk, now resolved by decision D4: no Yahoo derived data is redistri
 | 1 Data layer | Schemas enforced, PIT tests passing, data quality report generated, fixtures committed, CI green offline |
 | 2 Signals | Six model cards, IC and decay tables from code, leakage and placebo tests passing |
 | 3 Backtest | Costs tested against hand computed cases, DSR checked against a published reference, holdout guard tested |
-| 4 Portfolio | Closed form checks for risk parity and MV, HRP checked against a reference implementation, honest comparison table |
+| 4 Portfolio | Closed form checks for leg-wise risk parity and MV, leg-wise HRP checked against a hand computed example, honest comparison table |
 | 5 Risk | Kupiec and Christoffersen verified on simulated data with known violation rates, property tests on VaR monotonicity and coherence of ES |
 | 6 Surfaces | Dashboard, API with OpenAPI, tear sheet all generated from stored results |
 | 7 Hardening | Coverage at or above 85 percent on core, mypy strict on core, fresh clone reproduces headline figures in under 30 minutes, final skeptical review with an allocate or do not allocate statement |
@@ -213,8 +213,12 @@ A secondary risk, now resolved by decision D4: no Yahoo derived data is redistri
 - D5. Approved deviations from the original brief: analyst herding is replaced by 52 week high anchoring, and option implied skew is forward-only with realized skewness as the backtestable substitute. Both are documented as deviations in the README and the paper.
 - D6. Long-short is the primary variant with a flat borrow cost assumption (labeled an assumption) and a sensitivity grid over several borrow levels. A long-only variant is also reported.
 - D7. Forward collection is kept minimal. Raw CBOE snapshots are stored outside the public repo unless terms clearly allow redistribution. Only derived metrics are published. A keepalive prevents GitHub from disabling the schedule after 60 days of inactivity.
-- D8. MIT license. Hours per week: not yet provided (the answer contained an unfilled placeholder). Cut order if time runs short: API, then forward collection, then dashboard polish. Never cut the data layer, signal validation, backtest rigor, or the risk engine.
+- D8. MIT license. Hours per week: 10. Cut order if time runs short: API, then forward collection, then dashboard polish. Never cut the data layer, signal validation, backtest rigor, or the risk engine.
 
-## 11. Open item
+## 11. Later decisions
 
-Weeks and hours per week are still unknown. The cut order is fixed, so this does not block work, but it determines whether the cuts are expected.
+- D9. Phase 1 code gate approved on three conditions: CI green on the branch, REAL-DATA GATE tracked (issue 1, docs/REAL_DATA_GATE.md, enforced in CI), and Phase 2 on synthetic data for engineering only with every output labeled synthetic.
+- D10. Survivorship scenarios are reported as two named sets, the milder case and the upper bound on survivorship damage, and the report header states neither is an estimate. The double counting in the delisting scenario is kept because it is conservative.
+- D11. Python stays pinned below 3.13. The README documents setup with uv and pyenv.
+- D12. The license verification date in COSTS.md stays blank until the sponsor fills it.
+- D13. Real-data rebuild scripts are written and marked untested against live endpoints. The sponsor runs them locally and returns logs, and format fixes go into the offline parsers.

@@ -1,0 +1,22 @@
+# Limitations and known failure modes
+
+Data layer, Phase 1.
+
+1. Yahoo has no delisted tickers, so histories of index members that later vanished are absent. Every return estimate from the free price source is biased upward. The data quality report measures the missing share per year and runs sensitivity scenarios. Those scenarios are assumptions, not estimates, because the missing prices are unknowable from free data.
+2. The delisting terminal return scenario is conservative. It is applied to any member whose history ends before the sample end, even when the last print already contains the terminal move, so it can double count.
+3. Index membership is rebuilt from a public change log that can have gaps. Effective dates are used as if known on the effective date. Announcement dates would be more accurate for point in time use and are not available in this table.
+4. Availability lags are fixed calendar offsets, a simplification. Ken French factors use a conservative sixty day lag because the library updates with delay and revisions.
+5. The equal weight survivorship sensitivity ignores trading costs and uses lagged membership as weights. It is a diagnostic of bias, not a strategy.
+6. The synthetic market validates code paths and invariants, not economic conclusions. Nothing computed on it may be cited as a finding.
+7. Ticker reuse is a survivorship risk. Yahoo serves the price history of whoever holds a symbol today. A symbol that once belonged to a company that left the index and later to a different company will show prices that are not those of the member at the time, so returns attributed to old index members can be wrong. The Wikipedia change log lists tickers, not company identifiers, so the join between membership and prices has no identity check. Mitigation: the data quality report compares each ticker first price date with its index add date and flags late first prices, missing prices, and tickers that left the index and returned. Flagged tickers are reported, not silently dropped. The check is a heuristic and cannot prove a ticker was not reused.
+8. Costs, slippage, impact and borrow are assumptions. Defaults sit in the config and describe a liquid large cap universe. The borrow rate has no free data source and is a flat assumption, so every result must be read across the borrow and cost sensitivity grid, never at one value.
+9. Walk-forward and purged k-fold on rule based signals measure stability across time, not out of sample skill, because no parameter is fitted. Parameter choices come from the pre-registration, not from results.
+10. The deflated Sharpe counts distinct registered trials and treats them as independent. Correlated trials make the true effective count lower, so the deflation is conservative. Cost sensitivity cells are logged but not counted, a judgment stated in the output.
+11. Engine simplifications: turnover ignores weight drift between rebalances, missing returns are treated as zero (which understates delisting losses), the participation cap is a diagnostic and not a constraint, and there is no cash return or long book financing.
+12. The holdout guard protects against accidental use inside this codebase. It cannot stop someone from reading the holdout dates directly from files outside the engine, so the access log and the pre-registration are the audit trail.
+13. The information coefficient used to scale alpha in mean-variance is an assumption, not an estimate. Mean-variance amplifies errors in expected returns, so its apparent edge depends on that assumption.
+14. Leg-wise risk parity and leg-wise HRP apply long only rules within the long and short legs chosen by the composite score and then constrain the result. They are not true long-short risk parity. The comparison isolates the weighting rule, not these methods in their textbook form.
+15. If portfolio constraints are infeasible at a rebalance, the previous weights are held and the event is flagged and counted. Constraints are never silently relaxed.
+16. The per name position cap needs roughly thirty or more names per leg to allow full gross exposure. In a small universe the cap binds and gross falls.
+17. The Ledoit-Wolf target is a scaled identity, which ignores factor structure in returns.
+18. The composite includes the overhang signal at full weight although it is marked lower confidence. This is pre-registered and stated, not hidden.
