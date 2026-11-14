@@ -19,7 +19,7 @@ With uv:
     brew install uv
     uv venv --python 3.11 .venv
     source .venv/bin/activate
-    uv pip install -e ".[dev,live]"
+    uv pip install -e *.[dev,live]*
 
 With pyenv:
 
@@ -27,7 +27,7 @@ With pyenv:
     pyenv install 3.11
     pyenv local 3.11
     python -m venv .venv && source .venv/bin/activate
-    pip install -e ".[dev,live]"
+    pip install -e *.[dev,live]*
 
 ## Reproduce
     make all          # lint, types, tests, synthetic quality report, docs gate check
@@ -38,7 +38,7 @@ CI runs on a deterministic synthetic market, needs no network and no secrets. No
 
 UNTESTED AGAINST LIVE ENDPOINTS. Parsers have offline contract tests, the network code does not. Run on a machine with network access and send back the full log and any errors.
 
-    export SENTINEL_USER_AGENT="sentinel-research your-email@example.com"
+    export SENTINEL_USER_AGENT=*sentinel-research your-email@example.com*
     sentinel data doctor                         # connectivity check for every host
     sentinel data rebuild --dry-run              # universe only, no price download
     sentinel data rebuild --limit 40             # small smoke test
