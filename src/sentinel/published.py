@@ -212,6 +212,6 @@ def run(
         "composite": composite,
         "not_tested": list(UNMAPPED),
     }
-    metrics = rounded(metrics)
-    write_result(root / EVIDENCE, "metrics", metrics, synthetic=False)
-    return metrics
+    out: dict[str, Any] = rounded(metrics)
+    write_result(root / EVIDENCE, "metrics", out, synthetic=False)
+    return out
