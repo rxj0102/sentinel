@@ -1,0 +1,14 @@
+{
+  "files": {
+    "original_paper": "https://huggingface.co/datasets/OpenSourceAP/CrossSection/resolve/Data-Release-2026.10/Portfolios/Full%20Sets%20OP/PredictorPortsFull.parquet",
+    "quintiles_ew": "https://huggingface.co/datasets/OpenSourceAP/CrossSection/resolve/Data-Release-2026.10/Portfolios/Full%20Sets%20Alt/PredictorAltPorts_Quintiles.parquet",
+    "quintiles_vw": "https://huggingface.co/datasets/OpenSourceAP/CrossSection/resolve/Data-Release-2026.10/Portfolios/Full%20Sets%20Alt/PredictorAltPorts_QuintilesVW.parquet"
+  },
+  "first_month": "1926-02",
+  "last_month": "2022-12",
+  "release": "Data-Release-2026.10",
+  "rows": 13941,
+  "rows_dropped_from": "2023-01-03",
+  "sha256": "de217c526339e7275ba9bffe3c348ab0b888390c8b5952061615a546aa5c459f",
+  "source": "Open Source Asset Pricing, Chen and Zimmermann"
+}

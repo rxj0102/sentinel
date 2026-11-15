@@ -145,3 +145,5 @@ D. Test, fixed now.
 E. Holdout exposure, disclosed. While inspecting the source on 2026-11-15, before this amendment was written, seven monthly long-short returns of MaxRet from 2025 were printed to a terminal. No test, parameter or mapping above depends on them. The access is recorded in holdout/access_log.csv.
 
 F. Citing findings. A finding whose source file is under evidence/ may be cited while the gate is open. evidence/data_quality holds the survivorship report of point A, as counts and aggregate statistics only. evidence/published holds the results of this track. No price from the free stock-level source is published.
+
+Note to Amendment 3, added 2026-11-15 after the run. Point D names equal-weighted quintiles as a robustness construction. The file in the release that holds it weights each signal as its original paper does. That is equal weighting for High52, STreversal and ReturnSkew and value weighting for MaxRet, so for MaxRet this robustness series is identical to the headline series. The README labels the column accordingly. No rule, headline or verdict changes.

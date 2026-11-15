@@ -1,0 +1,203 @@
+{
+  "composite": {
+    "mean_annual": 0.011177198611111116,
+    "mean_monthly": 0.000931433217592593,
+    "mean_pairwise_correlation": 0.0767111913270079,
+    "n_months": 216,
+    "p_one_sided": 0.325352006365652,
+    "p_two_sided": 0.650704012731304,
+    "sharpe_annual": 0.12664227897321606,
+    "t": 0.45278437940449906,
+    "verdict": "not confirmed"
+  },
+  "construction": "quintiles_vw",
+  "not_tested": [
+    "overhang",
+    "abnormal_volume"
+  ],
+  "release": "Data-Release-2026.10",
+  "signals": {
+    "high52": {
+      "context_before_window": {
+        "first_month": "1926-07",
+        "mean_annual": 0.06597218777070063,
+        "mean_monthly": 0.0054976823142250525,
+        "n_months": 942,
+        "p_one_sided": 0.007575117470227766,
+        "p_two_sided": 0.015150234940455531,
+        "sharpe_annual": 0.259813266602003,
+        "t": 2.4287677245195542
+      },
+      "locked_sign": 1,
+      "mean_annual": 0.03397239944444443,
+      "mean_monthly": 0.0028310332870370362,
+      "n_months": 216,
+      "p_one_sided": 0.2760075963864954,
+      "p_one_sided_holm": 0.8280227891594862,
+      "p_two_sided": 0.5520151927729908,
+      "p_two_sided_holm": 1.0,
+      "published_signal": "High52",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.02534805166666667,
+          "mean_monthly": 0.002112337638888889,
+          "n_months": 216,
+          "p_one_sided": 0.319486230809334,
+          "p_two_sided": 0.638972461618668,
+          "sharpe_annual": 0.1476487860370807,
+          "t": 0.46913595324484964
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.037659369444444445,
+          "mean_monthly": 0.003138280787037037,
+          "n_months": 216,
+          "p_one_sided": 0.28378558806217324,
+          "p_two_sided": 0.5675711761243465,
+          "sharpe_annual": 0.17983033851287183,
+          "t": 0.5716321997936153
+        }
+      },
+      "sharpe_annual": 0.1610505377172353,
+      "t": 0.5947431215286475,
+      "verdict": "not confirmed"
+    },
+    "max_lottery": {
+      "context_before_window": {
+        "first_month": "1926-02",
+        "mean_annual": 0.05769302052798311,
+        "mean_monthly": 0.004807751710665259,
+        "n_months": 947,
+        "p_one_sided": 0.011660232209337873,
+        "p_two_sided": 0.023320464418675746,
+        "sharpe_annual": 0.2757095169759449,
+        "t": 2.2681434568822785
+      },
+      "locked_sign": -1,
+      "mean_annual": 0.027793855,
+      "mean_monthly": 0.0023161545833333334,
+      "n_months": 216,
+      "p_one_sided": 0.2821418188933832,
+      "p_one_sided_holm": 0.8280227891594862,
+      "p_two_sided": 0.5642836377867664,
+      "p_two_sided_holm": 1.0,
+      "published_signal": "MaxRet",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.03591749000000001,
+          "mean_monthly": 0.0029931241666666672,
+          "n_months": 216,
+          "p_one_sided": 0.2602281982317588,
+          "p_two_sided": 0.5204563964635176,
+          "sharpe_annual": 0.1577151794731741,
+          "t": 0.6426420419839879
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.027793855,
+          "mean_monthly": 0.0023161545833333334,
+          "n_months": 216,
+          "p_one_sided": 0.2821418188933832,
+          "p_two_sided": 0.5642836377867664,
+          "sharpe_annual": 0.15226232744010554,
+          "t": 0.5764905762016785
+        }
+      },
+      "sharpe_annual": 0.15226232744010554,
+      "t": 0.5764905762016785,
+      "verdict": "not confirmed"
+    },
+    "realized_skew": {
+      "context_before_window": {
+        "first_month": "1926-02",
+        "mean_annual": 0.006856477127771915,
+        "mean_monthly": 0.0005713730939809929,
+        "n_months": 947,
+        "p_one_sided": 0.20713825481448733,
+        "p_two_sided": 0.41427650962897467,
+        "sharpe_annual": 0.0954094240533911,
+        "t": 0.8163910573850865
+      },
+      "locked_sign": -1,
+      "mean_annual": 0.027305266111111108,
+      "mean_monthly": 0.0022754388425925923,
+      "n_months": 216,
+      "p_one_sided": 0.042130396649642465,
+      "p_one_sided_holm": 0.16852158659856986,
+      "p_two_sided": 0.08426079329928493,
+      "p_two_sided_holm": 0.3370431731971397,
+      "published_signal": "ReturnSkew",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.018500861666666663,
+          "mean_monthly": 0.001541738472222222,
+          "n_months": 216,
+          "p_one_sided": 0.16183099556880087,
+          "p_two_sided": 0.32366199113760175,
+          "sharpe_annual": 0.2653241815814988,
+          "t": 0.9869605245079447
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.018500861666666663,
+          "mean_monthly": 0.001541738472222222,
+          "n_months": 216,
+          "p_one_sided": 0.16183099556880087,
+          "p_two_sided": 0.32366199113760175,
+          "sharpe_annual": 0.2653241815814988,
+          "t": 0.9869605245079447
+        }
+      },
+      "sharpe_annual": 0.41813856859891807,
+      "t": 1.7264816748627074,
+      "verdict": "not confirmed"
+    },
+    "reversal": {
+      "context_before_window": {
+        "first_month": "1926-02",
+        "mean_annual": 0.06182013947201691,
+        "mean_monthly": 0.005151678289334743,
+        "n_months": 947,
+        "p_one_sided": 0.0009743389065192121,
+        "p_two_sided": 0.0019486778130384241,
+        "sharpe_annual": 0.3487301847238446,
+        "t": 3.0979447092711117
+      },
+      "locked_sign": -1,
+      "mean_annual": -0.04436272611111112,
+      "mean_monthly": -0.003696893842592593,
+      "n_months": 216,
+      "p_one_sided": 0.8616365311955014,
+      "p_one_sided_holm": 0.8616365311955014,
+      "p_two_sided": 0.27672693760899714,
+      "p_two_sided_holm": 0.8301808128269914,
+      "published_signal": "STreversal",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.07632877055555554,
+          "mean_monthly": 0.006360730879629628,
+          "n_months": 216,
+          "p_one_sided": 0.03291357723985899,
+          "p_two_sided": 0.06582715447971799,
+          "sharpe_annual": 0.39910458056648046,
+          "t": 1.8395988422647378
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.034946449444444444,
+          "mean_monthly": 0.00291220412037037,
+          "n_months": 216,
+          "p_one_sided": 0.11483146651369713,
+          "p_two_sided": 0.22966293302739427,
+          "sharpe_annual": 0.23855839142496535,
+          "t": 1.2012275817626195
+        }
+      },
+      "sharpe_annual": -0.2567735238960712,
+      "t": -1.0877014269215832,
+      "verdict": "not confirmed"
+    }
+  },
+  "window": {
+    "alpha": 0.05,
+    "end": "2022-12",
+    "nw_lags": 6,
+    "start": "2005-01"
+  }
+}

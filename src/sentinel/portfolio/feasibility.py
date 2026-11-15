@@ -11,6 +11,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 
 from sentinel.config import RunConfig
@@ -95,7 +96,7 @@ def check_feasibility(counts: pd.Series, run: RunConfig, enforce: bool) -> Feasi
         n_rebalances=len(counts),
         min_observed=int(counts.min()) if len(counts) else 0,
         min_observed_date=(
-            str(counts.index[int(counts.to_numpy().argmin())].date()) if len(counts) else "n/a"
+            str(counts.index[int(np.argmin(counts.to_numpy()))].date()) if len(counts) else "n/a"
         ),
         n_rebalances_short=int((counts < need).sum()),
         enforced=enforce,
