@@ -58,10 +58,26 @@ def get(url: str, retries: int = 3, pause: float = 0.3) -> requests.Response:
     raise RuntimeError(f"giving up on {url}") from last
 
 
+WIKI_CURRENT = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+WIKI_CHANGES = "https://en.wikipedia.org/wiki/Historical_components_of_the_S%26P_500"
+
+
 def fetch_wikipedia_sp500() -> tuple[list[str], pd.DataFrame, str]:
-    """Return (current symbols, change log, raw html). Raw html is kept for debugging."""
-    html = get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies").text
-    return parsers.parse_sp500_current(html), parsers.parse_sp500_changes(html), html
+    """Return (current symbols, change log, raw html). Raw html is kept for debugging.
+
+    The change log lived on the list page until 2026-08-11, when Wikipedia moved it to its own
+    article. The list page is tried first so an older mirror still works, then the new article.
+    """
+    html = get(WIKI_CURRENT).text
+    current = parsers.parse_sp500_current(html)
+    try:
+        changes = parsers.parse_sp500_changes(html)
+    except ValueError:
+        log.info("changes_table_moved", url=WIKI_CHANGES)
+        changes_html = get(WIKI_CHANGES).text
+        changes = parsers.parse_sp500_changes(changes_html)
+        html = html + "\n<!-- sentinel: change log page follows -->\n" + changes_html
+    return current, changes, html
 
 
 def fetch_yfinance_batch(tickers: list[str], start: str, end: str) -> pd.DataFrame:

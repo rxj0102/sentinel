@@ -3,7 +3,7 @@
 Rules:
 1. Style: no em-dashes, en-dashes or quotation marks outside code blocks (fenced or indented).
 2. A finding in docs is a line tagged [FINDING src=<results path>]. While the REAL-DATA GATE
-   is open, no FINDING tag may exist at all.
+   is open, a FINDING may only cite a file under evidence/ (Amendment 3).
 3. Even with the gate closed, a FINDING must cite an existing result whose sidecar says it
    is not synthetic.
 4. Any mention of results/synthetic must sit on a line tagged [SYNTHETIC-ENGINEERING-ONLY]
@@ -28,6 +28,9 @@ QUALIFIED = re.compile(
 )
 BARE = re.compile(r"\b(hierarchical risk parity|risk parity|HRP)\b", re.I)
 BAD_CHARS = ("—", "–", '"', "“", "”")
+# Amendment 3: the survivorship report and the published portfolios track may be cited while
+# the gate is open. Stock-level results under results/ may not.
+EVIDENCE_PREFIX = "evidence/"
 EXEMPT_DOCS = {"docs/REAL_DATA_GATE.md"}  # may describe the rules using the tag names
 
 
@@ -70,7 +73,7 @@ def check_docs(root: Path) -> list[str]:
                 errors.append(f"{loc}: synthetic result mentioned without {SYN_TAG}")
             if m:
                 src = m.group(1)
-                if not closed:
+                if not closed and not src.startswith(EVIDENCE_PREFIX):
                     errors.append(f"{loc}: FINDING while the REAL-DATA GATE is open")
                 if "results/synthetic" in src or "results/synthetic" in line:
                     errors.append(f"{loc}: synthetic result cited as a finding")

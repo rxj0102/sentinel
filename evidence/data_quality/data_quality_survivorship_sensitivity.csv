@@ -1,0 +1,7 @@
+scenario,ann_return,n_days,scenario_set
+baseline_missing_dropped,0.12797480560292973,4530,baseline
+delist_return_-0.30,0.12797480560292973,4530,milder_case
+delist_return_-1.00,0.12797480560292973,4530,upper_bound_survivorship_damage
+missing_imputed_penalty_0.05,0.11375664285947362,4530,milder_case
+missing_imputed_penalty_0.15,0.08585332714534699,4530,upper_bound_survivorship_damage
+years_missing_le_0.05,,0,restricted_sample

@@ -16,3 +16,4 @@ results/
 data/fixtures/*
 !data/fixtures/.gitkeep
 .hypothesis/
+logs/

@@ -95,3 +95,50 @@ def test_yfinance_normalizer_coerces_dtypes_and_defers_validation() -> None:
     clean, _, stats = quarantine_prices(out)
     assert stats["cells_blanked"] == 2
     PriceSchema.validate(clean)
+
+
+CURRENT_ONLY = """
+<table><thead><tr><th>Symbol</th><th>Security</th></tr></thead>
+<tbody><tr><td>AAA</td><td>Aaa</td></tr><tr><td>BRK.B</td><td>Berkshire</td></tr></tbody></table>
+"""
+
+
+class _Resp:
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
+def test_change_log_is_read_from_its_new_page_when_the_list_page_lacks_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Wikipedia moved the change log to its own article on 2026-08-11."""
+    from sentinel.data.sources import fetch
+
+    calls: list[str] = []
+
+    def fake_get(url: str, retries: int = 3, pause: float = 0.3) -> _Resp:
+        calls.append(url)
+        return _Resp(CURRENT_ONLY if url == fetch.WIKI_CURRENT else WIKI)
+
+    monkeypatch.setattr(fetch, "get", fake_get)
+    current, changes, html = fetch.fetch_wikipedia_sp500()
+    assert current == ["AAA", "BRK.B"]
+    assert list(changes["added"]) == ["CCC", "AAA"]
+    assert calls == [fetch.WIKI_CURRENT, fetch.WIKI_CHANGES]
+    assert "change log page follows" in html
+
+
+def test_change_log_on_the_list_page_is_used_without_a_second_request(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from sentinel.data.sources import fetch
+
+    calls: list[str] = []
+
+    def fake_get(url: str, retries: int = 3, pause: float = 0.3) -> _Resp:
+        calls.append(url)
+        return _Resp(CURRENT_ONLY + WIKI)
+
+    monkeypatch.setattr(fetch, "get", fake_get)
+    _, changes, _ = fetch.fetch_wikipedia_sp500()
+    assert len(changes) == 2 and calls == [fetch.WIKI_CURRENT]
