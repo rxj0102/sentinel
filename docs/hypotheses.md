@@ -111,3 +111,39 @@ B. Replacing the assumed information coefficient. The assumed value stays the de
 C. Feasibility before any real run. With a per name cap and a gross target, each leg needs at least the reciprocal of the cap, times half the gross, in names for the cap to allow full gross. The universe at each rebalance must therefore hold at least that many names per leg divided by the leg quantile. The code computes and prints both numbers from the config. Real data runs always enforce this check and fail loudly with the observed minimum and the date. Synthetic runs report the check and label it a mechanism test only. The check can be switched off only for synthetic runs.
 
 D. Infeasible constraint events. Every portfolio report header states, per construction, the number of rebalances attempted, the number that fell back to held weights because the constraints were infeasible, and the number skipped for lack of inputs. A warning line appears whenever any fallback occurred. There is no threshold below which the counts are hidden.
+
+### Amendment 3 (2026-11-15), committed before the code it governs and before any test on the data it names
+
+The locked table and Amendments 1 and 2 are unchanged.
+
+A. Why. The first real rebuild ran on 2026-11-15. It fails the REAL-DATA GATE on both conditions. Of 867 historical index members, 250 have no price history in the free source; the share of member days without a price falls from 39 percent in 2005 to 9 percent in 2022; and the monthly member count is 514 to 520 in every month, outside the tolerance of 10 around 500. The missing names are mostly the ones that were acquired, went bankrupt or were delisted. A stock-level test of these signals on that data would be biased in their favour. The gate stays open for every stock-level result.
+
+B. A second evidence track. The locked signs are tested on portfolio returns that do not have this hole: the Open Source Asset Pricing data of Chen and Zimmermann (release 2026.10), built from the full CRSP universe with delisting returns. This track is called published portfolios. It tests the locked sign of a signal against its nearest published definition. It does not test the Sentinel implementation of the signal, the S and P 500 universe, or the backtest engine.
+
+C. Mapping, fixed now. The published sign of each mapped signal equals the locked sign at the 21 day horizon.
+
+| locked signal | published signal | published definition | difference from the locked definition |
+|---|---|---|---|
+| max_lottery | MaxRet | highest daily return in the month (Bali, Cakici and Whitelaw 2011) | locked: mean of the 5 highest in 21 days |
+| high52 | High52 | price over the 52 week high (George and Hwang 2004) | none of substance |
+| reversal | STreversal | last month's return (Jegadeesh 1990) | none of substance |
+| realized_skew | ReturnSkew | skewness of daily returns in the month (Bali, Engle and Murray 2015) | locked: 63 day window |
+| overhang | none | no published counterpart in the release | not tested on this track |
+| abnormal_volume | none | no published counterpart in the release | not tested on this track |
+
+D. Test, fixed now.
+
+- Portfolio: value-weighted quintiles, top minus bottom on the signed signal (the long-short series of the release). Value weighting and quintiles are the closest published construction to a large cap universe with the locked quantile of 0.2.
+- Sample: monthly returns from 2005-01 to 2022-12, the development window. Rows from 2023-01 on are dropped by the loader before anything is computed or written, so the holdout stays locked.
+- Statistic: mean monthly return with a Newey-West standard error, 6 lags. One-sided test that the mean is positive, Holm correction across the four mapped signals.
+- Verdict per signal: confirmed if the mean is positive and the Holm-adjusted one-sided p-value is below 0.05; contradicted if the mean is negative and the Holm-adjusted two-sided p-value is below 0.05; otherwise not confirmed.
+- Composite: the equal-weight mean of the four long-short series, same test, reported as one more trial. No costs are modelled on this track, so nothing here is a claim about a tradable strategy.
+- Robustness, reported next to the headline and never used to choose it: equal-weighted quintiles, and the original-paper construction of each signal.
+- Context only, not a test: the same statistic from the start of each series to 2004-12. Those years were public long before the signs were locked.
+- Each of the five series is registered as a trial.
+
+E. Holdout exposure, disclosed. While inspecting the source on 2026-11-15, before this amendment was written, seven monthly long-short returns of MaxRet from 2025 were printed to a terminal. No test, parameter or mapping above depends on them. The access is recorded in holdout/access_log.csv.
+
+F. Citing findings. A finding whose source file is under evidence/ may be cited while the gate is open. evidence/data_quality holds the survivorship report of point A, as counts and aggregate statistics only. evidence/published holds the results of this track. No price from the free stock-level source is published.
+
+Note to Amendment 3, added 2026-11-15 after the run. Point D names equal-weighted quintiles as a robustness construction. The file in the release that holds it weights each signal as its original paper does. That is equal weighting for High52, STreversal and ReturnSkew and value weighting for MaxRet, so for MaxRet this robustness series is identical to the headline series. The README labels the column accordingly. No rule, headline or verdict changes.

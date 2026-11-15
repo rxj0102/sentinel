@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import typer
@@ -15,6 +16,9 @@ from sentinel.data.synthetic import make_market
 from sentinel.data.universe import membership_from_meta, membership_matrix
 from sentinel.logging import configure_logging, get_logger
 from sentinel.results import write_result, write_text_result
+
+if TYPE_CHECKING:
+    from sentinel.backtest.holdout import HoldoutGuard
 
 app = typer.Typer(help="Sentinel: behavioral alpha and risk platform", no_args_is_help=True)
 data_app = typer.Typer(help="Data layer commands", no_args_is_help=True)
@@ -363,3 +367,79 @@ def portfolio_run(
         out, "portfolio_report", render_portfolio_report(tables, synthetic, feas, run), synthetic
     )
     log.info("portfolio_written", synthetic=synthetic, trials=registry.n_trials)
+
+
+published_app = typer.Typer(help="Published portfolios track (Amendment 3)", no_args_is_help=True)
+app.add_typer(published_app, name="published")
+
+
+def _published_guard(config: Path) -> tuple[HoldoutGuard, str, str]:
+    from sentinel.backtest.holdout import HoldoutGuard
+    from sentinel.config import load_run_config
+
+    d = load_run_config(config).data
+    guard = HoldoutGuard.for_run(
+        pd.Timestamp(d.holdout_start),
+        pd.Timestamp(d.holdout_end) if d.holdout_end else None,
+        False,
+        results_root=Path("evidence"),
+    )
+    return guard, str(d.holdout_start), str(d.dev_end)
+
+
+@published_app.command("refresh")
+def published_refresh(config: Path = Path("configs/default.yaml")) -> None:
+    """Download the published long-short series. Holdout months are dropped before writing."""
+    import io
+
+    from sentinel import published
+    from sentinel.data.sources.fetch import get
+
+    configure_logging()
+    guard, cutoff, _ = _published_guard(config)
+    frames = {}
+    for c in published.FILES:
+        raw = pd.read_parquet(io.BytesIO(get(published.url(c)).content))
+        raw["date"] = pd.to_datetime(raw["date"])
+        frames[c] = guard.dev_only(raw)  # the holdout rows never leave this line
+    manifest = published.build_snapshot(Path("."), frames, cutoff)
+    get_logger("sentinel.published").info("published_refreshed", **manifest)
+
+
+@published_app.command("run")
+def published_run(config: Path = Path("configs/default.yaml"), register: bool = True) -> None:
+    """Test the locked signs on the frozen published series and write evidence/published."""
+    from sentinel import published
+    from sentinel.backtest.trials import TrialRegistry
+
+    configure_logging()
+    guard, _, dev_end = _published_guard(config)
+    registry = TrialRegistry(Path("validation/trial_log.csv")) if register else None
+    df = pd.read_csv(published.EVIDENCE / "long_short_returns.csv", dtype={"month": str})
+    df["date"] = pd.to_datetime(df["month"] + "-01")
+    df = guard.dev_only(df).drop(columns="date")
+    m = published.run(Path("."), df, dev_end, registry)
+    for name, row in m["signals"].items():
+        get_logger("sentinel.published").info(
+            "published_signal", signal=name, verdict=row["verdict"], t=row["t"]
+        )
+
+
+@app.command("readme")
+def readme_cmd(check: bool = False, config: Path = Path("configs/default.yaml")) -> None:
+    """Write the generated blocks of the README from evidence/. With --check, only compare."""
+    from sentinel import readme
+
+    guard, _, _ = _published_guard(config)
+    tables = {}
+    for t in readme.QUALITY_TABLES:
+        df = pd.read_csv(Path(readme.QUALITY) / f"data_quality_{t}.csv")
+        stamp = "year" if "year" in df else "month" if "month" in df else None
+        if stamp is not None:  # aggregate tables are still passed through the guard
+            df["date"] = pd.to_datetime(df[stamp].astype(str).str[:4] + "-01-01")
+            df = guard.dev_only(df).drop(columns="date")
+        tables[t] = df
+    if not readme.render(Path("."), tables, check=check):
+        typer.echo("README is out of date; run: sentinel readme")
+        raise typer.Exit(code=1)
+    typer.echo("README matches evidence/")

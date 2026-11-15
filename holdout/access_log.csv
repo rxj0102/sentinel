@@ -1,1 +1,2 @@
 timestamp_utc,commit,dirty,action,caller,requested_end,holdout_start,holdout_end,reason
+2026-11-15T14:19:00+00:00,259c6b41c43862dd458619202f7c8a30e0c9506b,True,inadvertent_view,manual source inspection,2025-12-31,2023-01-03,,seven 2025 MaxRet long-short returns printed while inspecting the Open Source Asset Pricing files; disclosed in Amendment 3 point E

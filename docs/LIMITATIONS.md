@@ -20,3 +20,13 @@ Data layer, Phase 1.
 16. The per name position cap needs roughly thirty or more names per leg to allow full gross exposure. In a small universe the cap binds and gross falls.
 17. The Ledoit-Wolf target is a scaled identity, which ignores factor structure in returns.
 18. The composite includes the overhang signal at full weight although it is marked lower confidence. This is pre-registered and stated, not hidden.
+
+Published portfolios track, Amendment 3.
+
+1. It tests the locked sign of a signal against its nearest published definition. It does not test the Sentinel implementation, the S and P 500 universe, the backtest engine or the portfolio constructions.
+2. Two published definitions differ from the locked ones: the lottery signal uses the single highest daily return of the month, not the mean of the five highest over 21 days, and skewness uses one month of daily returns, not 63 days.
+3. The universe is all of CRSP. Value weighting tilts the headline toward large companies but does not make it an index test.
+4. No trading cost, borrow cost or capacity limit is applied, so nothing on this track is a claim about a tradable strategy.
+5. The overhang and abnormal volume signals have no published counterpart in the release and are untested on real data.
+6. The window is 216 months. A premium of a few percent a year with this volatility cannot be told from zero in a sample that short, so not confirmed is not the same as shown to be zero.
+7. Seven holdout-period returns of one series were seen by accident before the amendment was written. They are disclosed in Amendment 3 and logged.

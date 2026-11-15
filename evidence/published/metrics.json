@@ -1,0 +1,203 @@
+{
+  "composite": {
+    "mean_annual": 0.0111772,
+    "mean_monthly": 0.000931433,
+    "mean_pairwise_correlation": 0.0767112,
+    "n_months": 216,
+    "p_one_sided": 0.325352,
+    "p_two_sided": 0.650704,
+    "sharpe_annual": 0.126642,
+    "t": 0.452784,
+    "verdict": "not confirmed"
+  },
+  "construction": "quintiles_vw",
+  "not_tested": [
+    "overhang",
+    "abnormal_volume"
+  ],
+  "release": "Data-Release-2026.10",
+  "signals": {
+    "high52": {
+      "context_before_window": {
+        "first_month": "1926-07",
+        "mean_annual": 0.0659722,
+        "mean_monthly": 0.00549768,
+        "n_months": 942,
+        "p_one_sided": 0.00757512,
+        "p_two_sided": 0.0151502,
+        "sharpe_annual": 0.259813,
+        "t": 2.42877
+      },
+      "locked_sign": 1,
+      "mean_annual": 0.0339724,
+      "mean_monthly": 0.00283103,
+      "n_months": 216,
+      "p_one_sided": 0.276008,
+      "p_one_sided_holm": 0.828023,
+      "p_two_sided": 0.552015,
+      "p_two_sided_holm": 1.0,
+      "published_signal": "High52",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.0253481,
+          "mean_monthly": 0.00211234,
+          "n_months": 216,
+          "p_one_sided": 0.319486,
+          "p_two_sided": 0.638972,
+          "sharpe_annual": 0.147649,
+          "t": 0.469136
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.0376594,
+          "mean_monthly": 0.00313828,
+          "n_months": 216,
+          "p_one_sided": 0.283786,
+          "p_two_sided": 0.567571,
+          "sharpe_annual": 0.17983,
+          "t": 0.571632
+        }
+      },
+      "sharpe_annual": 0.161051,
+      "t": 0.594743,
+      "verdict": "not confirmed"
+    },
+    "max_lottery": {
+      "context_before_window": {
+        "first_month": "1926-02",
+        "mean_annual": 0.057693,
+        "mean_monthly": 0.00480775,
+        "n_months": 947,
+        "p_one_sided": 0.0116602,
+        "p_two_sided": 0.0233205,
+        "sharpe_annual": 0.27571,
+        "t": 2.26814
+      },
+      "locked_sign": -1,
+      "mean_annual": 0.0277939,
+      "mean_monthly": 0.00231615,
+      "n_months": 216,
+      "p_one_sided": 0.282142,
+      "p_one_sided_holm": 0.828023,
+      "p_two_sided": 0.564284,
+      "p_two_sided_holm": 1.0,
+      "published_signal": "MaxRet",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.0359175,
+          "mean_monthly": 0.00299312,
+          "n_months": 216,
+          "p_one_sided": 0.260228,
+          "p_two_sided": 0.520456,
+          "sharpe_annual": 0.157715,
+          "t": 0.642642
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.0277939,
+          "mean_monthly": 0.00231615,
+          "n_months": 216,
+          "p_one_sided": 0.282142,
+          "p_two_sided": 0.564284,
+          "sharpe_annual": 0.152262,
+          "t": 0.576491
+        }
+      },
+      "sharpe_annual": 0.152262,
+      "t": 0.576491,
+      "verdict": "not confirmed"
+    },
+    "realized_skew": {
+      "context_before_window": {
+        "first_month": "1926-02",
+        "mean_annual": 0.00685648,
+        "mean_monthly": 0.000571373,
+        "n_months": 947,
+        "p_one_sided": 0.207138,
+        "p_two_sided": 0.414277,
+        "sharpe_annual": 0.0954094,
+        "t": 0.816391
+      },
+      "locked_sign": -1,
+      "mean_annual": 0.0273053,
+      "mean_monthly": 0.00227544,
+      "n_months": 216,
+      "p_one_sided": 0.0421304,
+      "p_one_sided_holm": 0.168522,
+      "p_two_sided": 0.0842608,
+      "p_two_sided_holm": 0.337043,
+      "published_signal": "ReturnSkew",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.0185009,
+          "mean_monthly": 0.00154174,
+          "n_months": 216,
+          "p_one_sided": 0.161831,
+          "p_two_sided": 0.323662,
+          "sharpe_annual": 0.265324,
+          "t": 0.986961
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.0185009,
+          "mean_monthly": 0.00154174,
+          "n_months": 216,
+          "p_one_sided": 0.161831,
+          "p_two_sided": 0.323662,
+          "sharpe_annual": 0.265324,
+          "t": 0.986961
+        }
+      },
+      "sharpe_annual": 0.418139,
+      "t": 1.72648,
+      "verdict": "not confirmed"
+    },
+    "reversal": {
+      "context_before_window": {
+        "first_month": "1926-02",
+        "mean_annual": 0.0618201,
+        "mean_monthly": 0.00515168,
+        "n_months": 947,
+        "p_one_sided": 0.000974339,
+        "p_two_sided": 0.00194868,
+        "sharpe_annual": 0.34873,
+        "t": 3.09794
+      },
+      "locked_sign": -1,
+      "mean_annual": -0.0443627,
+      "mean_monthly": -0.00369689,
+      "n_months": 216,
+      "p_one_sided": 0.861637,
+      "p_one_sided_holm": 0.861637,
+      "p_two_sided": 0.276727,
+      "p_two_sided_holm": 0.830181,
+      "published_signal": "STreversal",
+      "robustness": {
+        "original_paper": {
+          "mean_annual": 0.0763288,
+          "mean_monthly": 0.00636073,
+          "n_months": 216,
+          "p_one_sided": 0.0329136,
+          "p_two_sided": 0.0658272,
+          "sharpe_annual": 0.399105,
+          "t": 1.8396
+        },
+        "quintiles_ew": {
+          "mean_annual": 0.0349464,
+          "mean_monthly": 0.0029122,
+          "n_months": 216,
+          "p_one_sided": 0.114831,
+          "p_two_sided": 0.229663,
+          "sharpe_annual": 0.238558,
+          "t": 1.20123
+        }
+      },
+      "sharpe_annual": -0.256774,
+      "t": -1.0877,
+      "verdict": "not confirmed"
+    }
+  },
+  "window": {
+    "alpha": 0.05,
+    "end": "2022-12",
+    "nw_lags": 6,
+    "start": "2005-01"
+  }
+}

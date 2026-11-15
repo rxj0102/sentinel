@@ -69,3 +69,17 @@ def test_cli_exit_codes(tmp_path: Path) -> None:
 
 def test_indented_code_is_exempt(tmp_path: Path) -> None:
     assert check_docs(_root(tmp_path, '    pip install ".[dev]"\n')) == []
+
+
+def test_evidence_findings_allowed_while_gate_open(tmp_path: Path) -> None:
+    """Amendment 3: evidence/ may be cited with the gate open, results/ still may not."""
+    root = _root(tmp_path, "Coverage [FINDING src=evidence/data_quality/x.csv]\n")
+    write_result(root / "evidence" / "data_quality", "x", pd.DataFrame({"a": [1]}), synthetic=False)
+    assert check_docs(root) == []
+    (tmp_path / "m").mkdir()
+    (tmp_path / "f").mkdir()
+    missing = _root(tmp_path / "m", "Coverage [FINDING src=evidence/data_quality/none.csv]\n")
+    assert any("missing or not marked real" in e for e in check_docs(missing))
+    fake = _root(tmp_path / "f", "Coverage [FINDING src=evidence/x.csv]\n")
+    write_result(fake / "evidence", "x", pd.DataFrame({"a": [1]}), synthetic=True)
+    assert any("missing or not marked real" in e for e in check_docs(fake))

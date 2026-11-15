@@ -56,5 +56,18 @@ def test_backtest_cli_refuses_holdout_without_reason_and_unlocks_once(tmp_path: 
     assert "denied_no_reason" in set(log["action"]) and "denied_repeat" in set(log["action"])
 
 
-def test_committed_real_trial_log_is_empty() -> None:
-    assert (ROOT / "validation" / "trial_log.csv").read_text().count("\n") == 1
+def test_committed_real_trial_log_holds_only_the_disclosed_runs() -> None:
+    """The real trial log was empty until 2026-11-15. It now holds two disclosed sets of rows.
+
+    1. The published portfolios track of Amendment 3: four signals and their composite.
+    2. One stock-level pass over the survivor-only rebuild on 2026-11-15, run to exercise the
+       pipeline and reported nowhere (docs/REAL_DATA_GATE.md).
+
+    While the gate is open, any stock-level trial dated after that day fails this test.
+    """
+    log = pd.read_csv(ROOT / "validation" / "trial_log.csv")
+    reg = log[log["event"] == "register"]
+    is_published = reg["name"].str.startswith("published|")
+    assert reg.loc[is_published, "trial_hash"].nunique() == 5
+    assert set(reg.loc[~is_published, "timestamp_utc"].str[:10]) == {"2026-11-15"}
+    assert set(log.loc[log["event"] == "result", "trial_hash"]) <= set(reg["trial_hash"])

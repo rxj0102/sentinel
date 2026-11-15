@@ -113,6 +113,15 @@ def test_synthetic_and_real_logs_are_separate(tmp_path: Path) -> None:
     assert r.log_path.as_posix().endswith("holdout/access_log.csv")
 
 
-def test_committed_real_log_starts_empty() -> None:
+def test_committed_real_log_has_no_granted_access() -> None:
+    """The real holdout has never been unlocked.
+
+    The log held only its header until 2026-11-15. It now also holds one disclosed row: seven
+    holdout-period returns were printed by accident while a data source was inspected by hand
+    (Amendment 3, point E). Any further row, and above all a granted access, fails this test
+    and has to be justified here.
+    """
     log = Path(__file__).resolve().parents[2] / "holdout" / "access_log.csv"
-    assert log.read_text().count("\n") == 1  # header only, the real holdout is untouched
+    rows = pd.read_csv(log)
+    assert list(rows["action"]) == ["inadvertent_view"]
+    assert "granted" not in set(rows["action"])

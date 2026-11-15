@@ -30,6 +30,7 @@ quality: fixture
 	sentinel signals model-cards
 	sentinel audit-holdout
 	sentinel docs-check
+	sentinel readme --check
 
 check: lint typecheck test
 
