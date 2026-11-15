@@ -127,6 +127,17 @@ def describe(r: pd.Series) -> dict[str, Any]:
     }
 
 
+def rounded(x: Any) -> Any:
+    """Six significant digits, so the file is identical across machines and library builds."""
+    if isinstance(x, dict):
+        return {k: rounded(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [rounded(v) for v in x]
+    if isinstance(x, float):
+        return float(f"{x:.6g}")
+    return x
+
+
 def verdict(mean: float, p_one_holm: float, p_two_holm: float) -> str:
     if mean > 0 and p_one_holm < ALPHA:
         return "confirmed"
@@ -201,5 +212,6 @@ def run(
         "composite": composite,
         "not_tested": list(UNMAPPED),
     }
+    metrics = rounded(metrics)
     write_result(root / EVIDENCE, "metrics", metrics, synthetic=False)
     return metrics
