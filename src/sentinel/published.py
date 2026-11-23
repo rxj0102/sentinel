@@ -183,6 +183,16 @@ def run(
         signals[n]["p_two_sided_holm"] = float(b)
         signals[n]["verdict"] = verdict(signals[n]["mean_monthly"], a, b)
 
+    # Power, descriptive only: the chance the locked test confirms a signal whose true premium is
+    # half its pre-window mean, about what Chen, Lopez-Lira and Zimmermann find remains after
+    # publication. It uses the window's own standard error (mean / t) and the one-sided 5% level
+    # before the Holm adjustment, so it is an upper bound on the power of the test actually run.
+    for n in names:
+        r = signals[n]
+        se = r["mean_monthly"] / r["t"] if r["t"] else float("nan")
+        half = 0.5 * r["context_before_window"]["mean_monthly"]
+        r["power_half_pre_window"] = float(norm.sf(norm.ppf(1 - ALPHA) - half / se))
+
     comp = pd.concat(dev_series, axis=1).dropna().mean(axis=1)
     composite = describe(comp)
     composite["verdict"] = verdict(
