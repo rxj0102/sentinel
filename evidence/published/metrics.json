@@ -36,6 +36,7 @@
       "p_one_sided_holm": 0.828023,
       "p_two_sided": 0.552015,
       "p_two_sided_holm": 1.0,
+      "power_half_pre_window": 0.142901,
       "published_signal": "High52",
       "robustness": {
         "original_paper": {
@@ -80,6 +81,7 @@
       "p_one_sided_holm": 0.828023,
       "p_two_sided": 0.564284,
       "p_two_sided_holm": 1.0,
+      "power_half_pre_window": 0.147658,
       "published_signal": "MaxRet",
       "robustness": {
         "original_paper": {
@@ -124,6 +126,7 @@
       "p_one_sided_holm": 0.168522,
       "p_two_sided": 0.0842608,
       "p_two_sided_holm": 0.337043,
+      "power_half_pre_window": 0.076633,
       "published_signal": "ReturnSkew",
       "robustness": {
         "original_paper": {
@@ -168,6 +171,7 @@
       "p_one_sided_holm": 0.861637,
       "p_two_sided": 0.276727,
       "p_two_sided_holm": 0.830181,
+      "power_half_pre_window": 0.187542,
       "published_signal": "STreversal",
       "robustness": {
         "original_paper": {

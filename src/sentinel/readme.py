@@ -94,6 +94,22 @@ def published(root: Path) -> str:
         f"| Equal-weight composite of the four | | {pct(c['mean_annual'])} | {c['t']:.2f} | "
         f"{c['p_one_sided']:.2f} (unadjusted) | **{c['verdict'].capitalize()}** | |"
     )
+    pw = {LABELS[n]: r["power_half_pre_window"] for n, r in m["signals"].items()}
+    lo, hi = min(pw.values()), max(pw.values())
+    lines += [
+        "",
+        f"How much these tests could see: if each premium were half its pre-2005 size, about what "
+        f"Chen, Lopez-Lira and Zimmermann find survives publication, the chance that the locked test "
+        f"confirms it is {pct(lo)} to {pct(hi)} per signal, before the Holm adjustment makes it "
+        f"harder. "
+        + (
+            "So not confirmed here is weak evidence that the premiums are gone: a test this noisy "
+            "would usually miss a premium of that size. "
+            if hi < 0.5
+            else ""
+        )
+        + f"[FINDING src={METRICS}]",
+    ]
     lines += [
         "",
         f"The composite has a Sharpe ratio of {c['sharpe_annual']:.2f} before any trading cost, and "

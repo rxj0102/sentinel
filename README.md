@@ -50,6 +50,8 @@ Value-weighted quintile long-short returns, 2005-01 to 2022-12, 216 months. Posi
 | Short-term reversal | STreversal | -4.4% | -1.09 | 0.86 | **Not confirmed** | 6.2% (3.10) |
 | Equal-weight composite of the four | | 1.1% | 0.45 | 0.33 (unadjusted) | **Not confirmed** | |
 
+How much these tests could see: if each premium were half its pre-2005 size, about what Chen, Lopez-Lira and Zimmermann find survives publication, the chance that the locked test confirms it is 7.7% to 18.8% per signal, before the Holm adjustment makes it harder. So not confirmed here is weak evidence that the premiums are gone: a test this noisy would usually miss a premium of that size. [FINDING src=evidence/published/metrics.json]
+
 The composite has a Sharpe ratio of 0.13 before any trading cost, and the four series have a mean pairwise correlation of 0.08. The last column is context, not a test: those years were public long before the signs were locked. Disposition overhang and abnormal volume have no published counterpart in the release and are not tested. [FINDING src=evidence/published/metrics.json]
 
 Robustness, return per year (t), reported next to the headline and never used to choose it. The first column uses equal weights for three signals and value weights for the lottery signal, whose original paper is value-weighted, so that row repeats the headline:
@@ -64,7 +66,7 @@ Robustness, return per year (t), reported next to the headline and never used to
 
 How to read this:
 
-- The signs were locked from the literature, and the literature was right about the past. Most of these long-short returns were large and significant before 2005. In the 18 years since, none is distinguishable from zero in value-weighted portfolios. That matches the finding of McLean and Pontiff (2016) that anomaly returns shrink after publication.
+- The signs were locked from the literature, and the literature was right about the past. Most of these long-short returns were large and significant before 2005. In the 18 years since, none is distinguishable from zero in value-weighted portfolios. That matches the finding of McLean and Pontiff (2016) that anomaly returns shrink after publication. Chen, Lopez-Lira and Zimmermann find that about half of a predictor's return survives the end of its original sample, for published and data-mined predictors alike, and the power line under the table uses that as the benchmark. Jensen, Kelly and Pedersen (2023) read the same literature more favourably; their global factor data is the natural next test, written as an amendment before it is run.
 - This track tests the idea behind each signal, not the Sentinel code. The published definitions differ a little from the locked ones, the universe is all of CRSP and not the S and P 500, and no trading cost is charged. A positive result here would not have shown a tradable strategy, and the null does not need costs to hold.
 - Two of the six signals cannot be tested this way. The disposition overhang and abnormal volume signals have no published counterpart in the release.
 - The holdout from 2023 is still locked. One accidental view of seven holdout returns is disclosed in Amendment 3 and logged in holdout/access_log.csv.
